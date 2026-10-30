@@ -1,0 +1,139 @@
+{
+ "status": "completed",
+ "text": "大家 好， 今天 我们 来 看看 双语 字幕。 中文 在 上面， 英文 翻译 在 下面。 这个 demo 很 简单。",
+ "words": [
+  {
+   "text": "大家",
+   "start": 400,
+   "end": 760,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "好，",
+   "start": 840,
+   "end": 1200,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "今天",
+   "start": 1280,
+   "end": 1640,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "我们",
+   "start": 1720,
+   "end": 2080,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "来",
+   "start": 2160,
+   "end": 2400,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "看看",
+   "start": 2480,
+   "end": 2840,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "双语",
+   "start": 2920,
+   "end": 3280,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "字幕。",
+   "start": 3360,
+   "end": 3840,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "中文",
+   "start": 4440,
+   "end": 4800,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "在",
+   "start": 4880,
+   "end": 5120,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "上面，",
+   "start": 5200,
+   "end": 5680,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "英文",
+   "start": 5760,
+   "end": 6120,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "翻译",
+   "start": 6200,
+   "end": 6560,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "在",
+   "start": 6640,
+   "end": 6880,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "下面。",
+   "start": 6960,
+   "end": 7440,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "这个",
+   "start": 8040,
+   "end": 8400,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "demo",
+   "start": 8480,
+   "end": 8840,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "很",
+   "start": 8920,
+   "end": 9160,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "简单。",
+   "start": 9240,
+   "end": 9720,
+   "speaker": "A",
+   "confidence": 0.97
+  }
+ ]
+}

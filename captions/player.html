@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caption Player</title>
+<style>
+  :root {
+    --bg: #f4f4f2; --fg: #1a1a1a; --muted: #666; --line: #d8d8d4; --stage: #111;
+    --chip: #fff; --chip-on: #1a1a1a; --chip-on-fg: #fff;
+    --cap-box: rgba(0, 0, 0, .72); --cap-final: #fff; --cap-dim: #8a8a8a; --cap-sub: #ddd;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #141414; --fg: #eee; --muted: #999; --line: #2c2c2c; --chip: #1e1e1e; --chip-on: #eee; --chip-on-fg: #111; }
+  }
+  :root[data-theme="dark"] { --bg: #141414; --fg: #eee; --muted: #999; --line: #2c2c2c; --chip: #1e1e1e; --chip-on: #eee; --chip-on-fg: #111; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 system-ui, sans-serif; }
+  main { max-width: 960px; margin: 0 auto; padding: 32px 16px 48px; }
+  h1 { font-size: 22px; margin: 0 0 4px; font-weight: 600; }
+  .lede { color: var(--muted); margin: 0 0 20px; }
+  .modes { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .modes button { border: 1px solid var(--line); background: var(--chip); color: var(--fg); border-radius: 999px;
+    padding: 6px 14px; font: inherit; font-size: 14px; cursor: pointer; }
+  .modes button[aria-pressed="true"] { background: var(--chip-on); color: var(--chip-on-fg); border-color: var(--chip-on); }
+  .stage { position: relative; aspect-ratio: 16 / 9; background: var(--stage); border-radius: 10px; overflow: hidden;
+    container-type: inline-size; }
+  .stage video { width: 100%; height: 100%; object-fit: contain; display: block; }
+  .stage .empty { position: absolute; inset: 0; background: radial-gradient(circle at 30% 20%, #3a3a3a, #111 70%); }
+  .cap { position: absolute; left: 50%; bottom: 8%; transform: translateX(-50%); width: max-content; max-width: 90%;
+    text-align: center; pointer-events: none; }
+  .cap .main, .cap .sub { display: inline-block; background: var(--cap-box); border-radius: 4px; padding: .12em .45em; }
+  .cap .main { font-size: max(16px, 4.2cqw); line-height: 1.35; color: var(--cap-final); }
+  .cap .sub { font-size: max(13px, 3cqw); line-height: 1.35; color: var(--cap-sub); margin-top: .3em; }
+  .cap .w { transition: none; }
+  .cap .w.dim { color: var(--cap-dim); }
+  .cap .w.hidden { visibility: hidden; }
+  .bar { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+  .bar button { border: 1px solid var(--line); background: var(--chip); color: var(--fg); border-radius: 6px;
+    padding: 6px 12px; font: inherit; font-size: 14px; cursor: pointer; min-width: 72px; }
+  .bar input[type=range] { flex: 1; }
+  .bar .time { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; }
+  .opts { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; color: var(--muted); font-size: 14px; }
+  .lines { margin-top: 24px; border-top: 1px solid var(--line); }
+  .lines div { display: grid; grid-template-columns: 64px 1fr; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line);
+    cursor: pointer; font-size: 15px; }
+  .lines div.on { font-weight: 600; }
+  .lines .t { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .lines .tr { display: block; color: var(--muted); font-weight: 400; }
+  @media (max-width: 520px) { .lines div { grid-template-columns: 48px 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="title">Caption player</h1>
+  <p class="lede" id="lede">Pick a caption mode and press play. Words turn from grey to white as they're spoken.</p>
+  <div class="modes" id="modes"></div>
+  <div class="stage" id="stage"><div class="cap" id="cap"></div></div>
+  <div class="bar">
+    <button id="play">Play</button>
+    <input id="seek" type="range" min="0" max="1" step="0.01" value="0" aria-label="Seek">
+    <span class="time" id="time">0:00</span>
+  </div>
+  <div class="opts">
+    <label><input type="checkbox" id="karaoke" checked> Word-by-word</label>
+    <label><input type="checkbox" id="dual" checked> Second line</label>
+  </div>
+  <div class="lines" id="lines"></div>
+</main>
+<script>
+// Filled in by `python -m captions`: {title, video, tracks: [{mode, label, cues: [{start, end, text, words, translation?}]}]}
+const DATA = /*DATA*/{"title": "Caption player", "video": null, "tracks": [], "fonts": []}/*END*/;
+
+const $ = (id) => document.getElementById(id);
+const stage = $("stage"), cap = $("cap");
+let track = DATA.tracks[0], video = null, clock = 0, playing = false, last = null;
+const duration = () => video ? (video.duration || 0) : Math.max(0, ...DATA.tracks.flatMap(t => t.cues.map(c => c.end))) + 0.5;
+const now = () => video ? video.currentTime : clock;
+const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+const cjk = (ch) => /[⺀-鿿豈-﫿＀-￯　-〿]/.test(ch || "");
+
+// fonts from the fonts/ folder, by the family name the CLI read from each file
+for (const f of DATA.fonts || []) {
+  const s = document.createElement("style");
+  const fam = String(f.family).replace(/["\\<>;{}]/g, "");          // names come from font files: keep them inert
+  s.textContent = `@font-face { font-family: "${fam}"; src: url("${encodeURI(f.url).replace(/"/g, "%22")}"); }`;
+  document.head.append(s);
+}
+$("title").textContent = DATA.title;
+document.title = DATA.title;
+if (DATA.video) {
+  video = document.createElement("video");
+  video.src = DATA.video; video.playsInline = true; video.preload = "metadata";
+  video.addEventListener("loadedmetadata", () => { $("seek").max = duration(); });
+  video.addEventListener("ended", () => setPlaying(false));
+  stage.prepend(video);
+} else {
+  stage.insertAdjacentHTML("afterbegin", '<div class="empty"></div>');
+}
+
+function setTrack(t) {
+  track = t;
+  for (const b of $("modes").children) b.setAttribute("aria-pressed", b.dataset.mode === t.mode);
+  $("lines").innerHTML = "";
+  t.cues.forEach((c, i) => {
+    const row = document.createElement("div");
+    row.innerHTML = `<span class="t">${fmt(c.start)}</span><span></span>`;
+    row.lastChild.textContent = c.text;
+    if (c.translation) { const tr = document.createElement("span"); tr.className = "tr"; tr.textContent = c.translation; row.lastChild.append(tr); }
+    row.onclick = () => seek(c.start + 0.01);
+    $("lines").append(row);
+  });
+  last = null; render();
+}
+
+DATA.tracks.forEach((t) => {
+  const b = document.createElement("button");
+  b.textContent = t.label; b.dataset.mode = t.mode; b.onclick = () => setTrack(t);
+  $("modes").append(b);
+});
+if (DATA.tracks.length < 2) $("modes").hidden = true;
+
+function render() {
+  const t = now();
+  const i = track ? track.cues.findIndex(c => c.start <= t && t < c.end) : -1;
+  const key = `${track && track.mode}|${i}|${$("karaoke").checked}|${$("dual").checked}`;
+  if (key !== last) {
+    last = key; cap.innerHTML = "";
+    [...$("lines").children].forEach((r, n) => r.classList.toggle("on", n === i));
+    if (i >= 0) {
+      const c = track.cues[i], main = document.createElement("div");
+      main.className = "main";
+      if (track.font) main.style.fontFamily = track.font;
+      main.dir = track.rtl ? "rtl" : "auto";
+      c.words.forEach((w, n) => {
+        const prev = n ? c.words[n - 1].text : "";
+        if (n && !(cjk(prev.slice(-1)) && cjk(w.text[0]))) main.append(" ");
+        const s = document.createElement("span"); s.className = "w"; s.textContent = w.text; s.dataset.start = w.start; s.dataset.end = w.end;
+        main.append(s);
+      });
+      cap.append(main);
+      if (c.translation && $("dual").checked) {
+        const sub = document.createElement("div"); sub.className = "sub"; sub.textContent = c.translation; sub.dir = "auto";
+        if (track.font2) sub.style.fontFamily = track.font2;
+        cap.append(document.createElement("br"), sub);
+      }
+    }
+  }
+  // Each word appears grey when it starts and turns white when it ends, like live captions.
+  for (const s of cap.querySelectorAll(".w")) {
+    const on = $("karaoke").checked;
+    s.classList.toggle("hidden", on && t < +s.dataset.start - 0.02);
+    s.classList.toggle("dim", on && t < +s.dataset.end);
+  }
+  $("seek").value = t; $("time").textContent = `${fmt(t)} / ${fmt(duration())}`;
+}
+
+let prevFrame = null;
+function tick(ts) {
+  if (playing && !video) {
+    clock += prevFrame == null ? 0 : (ts - prevFrame) / 1000;
+    if (clock >= duration()) clock = 0;              // the demo loops
+  }
+  prevFrame = ts; render(); requestAnimationFrame(tick);
+}
+function setPlaying(p) {
+  playing = p; $("play").textContent = p ? "Pause" : "Play";
+  if (video) p ? video.play() : video.pause();
+}
+function seek(t) { if (video) video.currentTime = t; else clock = t; render(); }
+
+$("play").onclick = () => setPlaying(!playing);
+$("seek").max = duration();
+$("seek").oninput = (e) => seek(+e.target.value);
+$("karaoke").onchange = $("dual").onchange = () => { last = null; render(); };
+$("dual").parentElement.hidden = !DATA.tracks.some(t => t.cues.some(c => c.translation));
+if (track) setTrack(track);
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

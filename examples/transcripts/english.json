@@ -1,0 +1,167 @@
+{
+ "status": "completed",
+ "text": "Captions don't have to stop at English. Pick a mode, drop in a video, and every word shows up right when it's spoken.",
+ "words": [
+  {
+   "text": "Captions",
+   "start": 400,
+   "end": 1000,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "don't",
+   "start": 1080,
+   "end": 1500,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "have",
+   "start": 1580,
+   "end": 1940,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "to",
+   "start": 2020,
+   "end": 2260,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "stop",
+   "start": 2340,
+   "end": 2700,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "at",
+   "start": 2780,
+   "end": 3020,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "English.",
+   "start": 3100,
+   "end": 3700,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "Pick",
+   "start": 4300,
+   "end": 4660,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "a",
+   "start": 4740,
+   "end": 4920,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "mode,",
+   "start": 5000,
+   "end": 5420,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "drop",
+   "start": 5500,
+   "end": 5860,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "in",
+   "start": 5940,
+   "end": 6180,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "a",
+   "start": 6260,
+   "end": 6440,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "video,",
+   "start": 6520,
+   "end": 7000,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "and",
+   "start": 7080,
+   "end": 7380,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "every",
+   "start": 7460,
+   "end": 7880,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "word",
+   "start": 7960,
+   "end": 8320,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "shows",
+   "start": 8400,
+   "end": 8820,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "up",
+   "start": 8900,
+   "end": 9140,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "right",
+   "start": 9220,
+   "end": 9640,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "when",
+   "start": 9720,
+   "end": 10080,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "it's",
+   "start": 10160,
+   "end": 10520,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "spoken.",
+   "start": 10600,
+   "end": 11140,
+   "speaker": "A",
+   "confidence": 0.97
+  }
+ ]
+}

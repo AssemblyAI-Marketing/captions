@@ -1,0 +1,134 @@
+{
+ "mode": "german+english",
+ "label": "German + English",
+ "cues": [
+  {
+   "start": 0,
+   "end": 1.262,
+   "text": "Hallo zusammen.",
+   "words": [
+    {
+     "text": "Hallo",
+     "start": 0.016,
+     "end": 0.259,
+     "speaker": "A"
+    },
+    {
+     "text": "zusammen.",
+     "start": 0.34,
+     "end": 0.793,
+     "speaker": "A"
+    }
+   ],
+   "translation": "Hello everyone."
+  },
+  {
+   "start": 1.262,
+   "end": 3.627,
+   "text": "Heute fügen wir mit AssemblyAI",
+   "words": [
+    {
+     "text": "Heute",
+     "start": 1.312,
+     "end": 1.798,
+     "speaker": "A"
+    },
+    {
+     "text": "fügen",
+     "start": 1.798,
+     "end": 2.138,
+     "speaker": "A"
+    },
+    {
+     "text": "wir",
+     "start": 2.203,
+     "end": 2.446,
+     "speaker": "A"
+    },
+    {
+     "text": "mit",
+     "start": 2.446,
+     "end": 2.624,
+     "speaker": "A"
+    },
+    {
+     "text": "AssemblyAI",
+     "start": 2.624,
+     "end": 3.547,
+     "speaker": "A"
+    }
+   ],
+   "translation": "Today we're adding with AssemblyAI"
+  },
+  {
+   "start": 3.627,
+   "end": 6.334,
+   "text": "Untertitel zu einem Video hinzu.",
+   "words": [
+    {
+     "text": "Untertitel",
+     "start": 3.677,
+     "end": 4.373,
+     "speaker": "A"
+    },
+    {
+     "text": "zu",
+     "start": 4.389,
+     "end": 4.649,
+     "speaker": "A"
+    },
+    {
+     "text": "einem",
+     "start": 4.649,
+     "end": 4.956,
+     "speaker": "A"
+    },
+    {
+     "text": "Video",
+     "start": 4.956,
+     "end": 5.313,
+     "speaker": "A"
+    },
+    {
+     "text": "hinzu.",
+     "start": 5.313,
+     "end": 5.734,
+     "speaker": "A"
+    }
+   ],
+   "translation": "subtitles to a video."
+  },
+  {
+   "start": 6.364,
+   "end": 8.683,
+   "text": "Deutsch oben, Englisch unten.",
+   "words": [
+    {
+     "text": "Deutsch",
+     "start": 6.414,
+     "end": 6.754,
+     "speaker": "A"
+    },
+    {
+     "text": "oben,",
+     "start": 6.754,
+     "end": 7.078,
+     "speaker": "A"
+    },
+    {
+     "text": "Englisch",
+     "start": 7.402,
+     "end": 7.807,
+     "speaker": "A"
+    },
+    {
+     "text": "unten.",
+     "start": 7.807,
+     "end": 8.083,
+     "speaker": "A"
+    }
+   ],
+   "translation": "German on top, English on the bottom."
+  }
+ ]
+}

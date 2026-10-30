@@ -1,0 +1,90 @@
+{
+ "mode": "arabic+english",
+ "label": "Arabic + English",
+ "cues": [
+  {
+   "start": 0.35,
+   "end": 1.94,
+   "text": "مرحبا بالجميع.",
+   "words": [
+    {
+     "text": "مرحبا",
+     "start": 0.4,
+     "end": 0.83,
+     "speaker": "A"
+    },
+    {
+     "text": "بالجميع.",
+     "start": 0.91,
+     "end": 1.49,
+     "speaker": "A"
+    }
+   ],
+   "translation": "Hello everyone."
+  },
+  {
+   "start": 1.94,
+   "end": 4.39,
+   "text": "اليوم نضيف ترجمة ثنائية إلى",
+   "words": [
+    {
+     "text": "اليوم",
+     "start": 1.99,
+     "end": 2.42,
+     "speaker": "A"
+    },
+    {
+     "text": "نضيف",
+     "start": 2.5,
+     "end": 2.88,
+     "speaker": "A"
+    },
+    {
+     "text": "ترجمة",
+     "start": 2.96,
+     "end": 3.39,
+     "speaker": "A"
+    },
+    {
+     "text": "ثنائية",
+     "start": 3.47,
+     "end": 3.95,
+     "speaker": "A"
+    },
+    {
+     "text": "إلى",
+     "start": 4.03,
+     "end": 4.36,
+     "speaker": "A"
+    }
+   ],
+   "translation": "Today we're adding dual captions to"
+  },
+  {
+   "start": 4.39,
+   "end": 7.09,
+   "text": "الفيديو بالعربية والإنجليزية.",
+   "words": [
+    {
+     "text": "الفيديو",
+     "start": 4.44,
+     "end": 4.97,
+     "speaker": "A"
+    },
+    {
+     "text": "بالعربية",
+     "start": 5.05,
+     "end": 5.63,
+     "speaker": "A"
+    },
+    {
+     "text": "والإنجليزية.",
+     "start": 5.71,
+     "end": 6.49,
+     "speaker": "A"
+    }
+   ],
+   "translation": "the video, in Arabic and English."
+  }
+ ]
+}

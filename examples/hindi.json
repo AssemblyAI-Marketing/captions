@@ -1,0 +1,172 @@
+{
+ "mode": "hindi",
+ "label": "Hindi",
+ "cues": [
+  {
+   "start": 0.35,
+   "end": 2.23,
+   "text": "नमस्ते, आज हम देखेंगे",
+   "words": [
+    {
+     "text": "नमस्ते,",
+     "start": 0.4,
+     "end": 0.94,
+     "speaker": "A"
+    },
+    {
+     "text": "आज",
+     "start": 1.02,
+     "end": 1.26,
+     "speaker": "A"
+    },
+    {
+     "text": "हम",
+     "start": 1.34,
+     "end": 1.58,
+     "speaker": "A"
+    },
+    {
+     "text": "देखेंगे",
+     "start": 1.66,
+     "end": 2.2,
+     "speaker": "A"
+    }
+   ]
+  },
+  {
+   "start": 2.23,
+   "end": 4.95,
+   "text": "कि कैप्शन कैसे बनते हैं।",
+   "words": [
+    {
+     "text": "कि",
+     "start": 2.28,
+     "end": 2.52,
+     "speaker": "A"
+    },
+    {
+     "text": "कैप्शन",
+     "start": 2.6,
+     "end": 3.08,
+     "speaker": "A"
+    },
+    {
+     "text": "कैसे",
+     "start": 3.16,
+     "end": 3.52,
+     "speaker": "A"
+    },
+    {
+     "text": "बनते",
+     "start": 3.6,
+     "end": 3.96,
+     "speaker": "A"
+    },
+    {
+     "text": "हैं।",
+     "start": 4.04,
+     "end": 4.4,
+     "speaker": "A"
+    }
+   ]
+  },
+  {
+   "start": 4.95,
+   "end": 7.47,
+   "text": "हर शब्द ठीक उसी समय स्क्रीन",
+   "words": [
+    {
+     "text": "हर",
+     "start": 5.0,
+     "end": 5.24,
+     "speaker": "A"
+    },
+    {
+     "text": "शब्द",
+     "start": 5.32,
+     "end": 5.68,
+     "speaker": "A"
+    },
+    {
+     "text": "ठीक",
+     "start": 5.76,
+     "end": 6.06,
+     "speaker": "A"
+    },
+    {
+     "text": "उसी",
+     "start": 6.14,
+     "end": 6.44,
+     "speaker": "A"
+    },
+    {
+     "text": "समय",
+     "start": 6.52,
+     "end": 6.82,
+     "speaker": "A"
+    },
+    {
+     "text": "स्क्रीन",
+     "start": 6.9,
+     "end": 7.44,
+     "speaker": "A"
+    }
+   ]
+  },
+  {
+   "start": 7.47,
+   "end": 10.96,
+   "text": "पर आता है जब वह बोला जाता है।",
+   "words": [
+    {
+     "text": "पर",
+     "start": 7.52,
+     "end": 7.76,
+     "speaker": "A"
+    },
+    {
+     "text": "आता",
+     "start": 7.84,
+     "end": 8.14,
+     "speaker": "A"
+    },
+    {
+     "text": "है",
+     "start": 8.22,
+     "end": 8.46,
+     "speaker": "A"
+    },
+    {
+     "text": "जब",
+     "start": 8.54,
+     "end": 8.78,
+     "speaker": "A"
+    },
+    {
+     "text": "वह",
+     "start": 8.86,
+     "end": 9.1,
+     "speaker": "A"
+    },
+    {
+     "text": "बोला",
+     "start": 9.18,
+     "end": 9.54,
+     "speaker": "A"
+    },
+    {
+     "text": "जाता",
+     "start": 9.62,
+     "end": 9.98,
+     "speaker": "A"
+    },
+    {
+     "text": "है।",
+     "start": 10.06,
+     "end": 10.36,
+     "speaker": "A"
+    }
+   ]
+  }
+ ]
+}

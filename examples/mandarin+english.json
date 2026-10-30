@@ -1,0 +1,106 @@
+{
+ "mode": "mandarin+english",
+ "label": "Mandarin + English",
+ "cues": [
+  {
+   "start": 0.37,
+   "end": 3.23,
+   "text": "大家好，今天我们给视频加上双语",
+   "words": [
+    {
+     "text": "大家好，",
+     "start": 0.42,
+     "end": 1.02,
+     "speaker": "A"
+    },
+    {
+     "text": "今天",
+     "start": 1.02,
+     "end": 1.48,
+     "speaker": "A"
+    },
+    {
+     "text": "我们",
+     "start": 1.48,
+     "end": 1.82,
+     "speaker": "A"
+    },
+    {
+     "text": "给",
+     "start": 1.82,
+     "end": 2.06,
+     "speaker": "A"
+    },
+    {
+     "text": "视频",
+     "start": 2.06,
+     "end": 2.46,
+     "speaker": "A"
+    },
+    {
+     "text": "加上",
+     "start": 2.46,
+     "end": 2.9,
+     "speaker": "A"
+    },
+    {
+     "text": "双语",
+     "start": 2.9,
+     "end": 3.28,
+     "speaker": "A"
+    }
+   ],
+   "translation": "Hi everyone, today we're adding bilingual"
+  },
+  {
+   "start": 3.23,
+   "end": 7.08,
+   "text": "字幕，中文在上面，英文在下面。",
+   "words": [
+    {
+     "text": "字幕，",
+     "start": 3.28,
+     "end": 4.2,
+     "speaker": "A"
+    },
+    {
+     "text": "中文",
+     "start": 4.2,
+     "end": 4.52,
+     "speaker": "A"
+    },
+    {
+     "text": "在",
+     "start": 4.52,
+     "end": 4.66,
+     "speaker": "A"
+    },
+    {
+     "text": "上面，",
+     "start": 4.66,
+     "end": 5.3,
+     "speaker": "A"
+    },
+    {
+     "text": "英文",
+     "start": 5.3,
+     "end": 5.76,
+     "speaker": "A"
+    },
+    {
+     "text": "在",
+     "start": 5.76,
+     "end": 5.96,
+     "speaker": "A"
+    },
+    {
+     "text": "下面。",
+     "start": 5.96,
+     "end": 6.48,
+     "speaker": "A"
+    }
+   ],
+   "translation": "subtitles to the video, Chinese on top, English below."
+  }
+ ]
+}

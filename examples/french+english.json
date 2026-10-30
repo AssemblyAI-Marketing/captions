@@ -1,0 +1,180 @@
+{
+ "mode": "french+english",
+ "label": "French + English",
+ "cues": [
+  {
+   "start": 0,
+   "end": 1.269,
+   "text": "Bonjour à tous.",
+   "words": [
+    {
+     "text": "Bonjour",
+     "start": 0.016,
+     "end": 0.434,
+     "speaker": "A"
+    },
+    {
+     "text": "à",
+     "start": 0.434,
+     "end": 0.498,
+     "speaker": "A"
+    },
+    {
+     "text": "tous.",
+     "start": 0.498,
+     "end": 0.707,
+     "speaker": "A"
+    }
+   ],
+   "translation": "Hello everyone."
+  },
+  {
+   "start": 1.269,
+   "end": 2.701,
+   "text": "Aujourd'hui, nous ajoutons",
+   "words": [
+    {
+     "text": "Aujourd'hui,",
+     "start": 1.319,
+     "end": 1.866,
+     "speaker": "A"
+    },
+    {
+     "text": "nous",
+     "start": 2.139,
+     "end": 2.284,
+     "speaker": "A"
+    },
+    {
+     "text": "ajoutons",
+     "start": 2.284,
+     "end": 2.751,
+     "speaker": "A"
+    }
+   ],
+   "translation": "Today, we're adding"
+  },
+  {
+   "start": 2.701,
+   "end": 3.505,
+   "text": "des sous-titres à une",
+   "words": [
+    {
+     "text": "des",
+     "start": 2.751,
+     "end": 2.831,
+     "speaker": "A"
+    },
+    {
+     "text": "sous-titres",
+     "start": 2.831,
+     "end": 3.33,
+     "speaker": "A"
+    },
+    {
+     "text": "à",
+     "start": 3.33,
+     "end": 3.41,
+     "speaker": "A"
+    },
+    {
+     "text": "une",
+     "start": 3.41,
+     "end": 3.475,
+     "speaker": "A"
+    }
+   ],
+   "translation": "subtitles to a"
+  },
+  {
+   "start": 3.505,
+   "end": 5.275,
+   "text": "vidéo avec Assembly.",
+   "words": [
+    {
+     "text": "vidéo",
+     "start": 3.555,
+     "end": 3.893,
+     "speaker": "A"
+    },
+    {
+     "text": "avec",
+     "start": 3.893,
+     "end": 4.215,
+     "speaker": "A"
+    },
+    {
+     "text": "Assembly.",
+     "start": 4.215,
+     "end": 4.729,
+     "speaker": "A"
+    }
+   ],
+   "translation": "video with Assembly."
+  },
+  {
+   "start": 5.275,
+   "end": 6.513,
+   "text": "Le français est en haut,",
+   "words": [
+    {
+     "text": "Le",
+     "start": 5.325,
+     "end": 5.486,
+     "speaker": "A"
+    },
+    {
+     "text": "français",
+     "start": 5.486,
+     "end": 5.984,
+     "speaker": "A"
+    },
+    {
+     "text": "est",
+     "start": 5.984,
+     "end": 6.065,
+     "speaker": "A"
+    },
+    {
+     "text": "en",
+     "start": 6.065,
+     "end": 6.209,
+     "speaker": "A"
+    },
+    {
+     "text": "haut,",
+     "start": 6.306,
+     "end": 6.338,
+     "speaker": "A"
+    }
+   ],
+   "translation": "French is on top,"
+  },
+  {
+   "start": 6.513,
+   "end": 7.823,
+   "text": "l'anglais en bas.",
+   "words": [
+    {
+     "text": "l'anglais",
+     "start": 6.563,
+     "end": 6.95,
+     "speaker": "A"
+    },
+    {
+     "text": "en",
+     "start": 6.95,
+     "end": 7.046,
+     "speaker": "A"
+    },
+    {
+     "text": "bas.",
+     "start": 7.094,
+     "end": 7.223,
+     "speaker": "A"
+    }
+   ],
+   "translation": "English is at the bottom."
+  }
+ ]
+}

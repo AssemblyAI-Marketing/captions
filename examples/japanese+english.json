@@ -1,0 +1,184 @@
+{
+ "mode": "japanese+english",
+ "label": "Japanese + English",
+ "cues": [
+  {
+   "start": 0,
+   "end": 1.44,
+   "text": "こんにちは。",
+   "words": [
+    {
+     "text": "こんにちは。",
+     "start": 0.0,
+     "end": 0.84,
+     "speaker": "A"
+    }
+   ],
+   "translation": "Hello."
+  },
+  {
+   "start": 1.47,
+   "end": 3.03,
+   "text": "今日は動画に字幕を",
+   "words": [
+    {
+     "text": "今日は",
+     "start": 1.52,
+     "end": 1.72,
+     "speaker": "A"
+    },
+    {
+     "text": "動画",
+     "start": 1.72,
+     "end": 2.3,
+     "speaker": "A"
+    },
+    {
+     "text": "に",
+     "start": 2.3,
+     "end": 2.5,
+     "speaker": "A"
+    },
+    {
+     "text": "字幕",
+     "start": 2.5,
+     "end": 2.82,
+     "speaker": "A"
+    },
+    {
+     "text": "を",
+     "start": 2.82,
+     "end": 3.08,
+     "speaker": "A"
+    }
+   ],
+   "translation": "Today, I'll show you how to"
+  },
+  {
+   "start": 3.03,
+   "end": 5.34,
+   "text": "つける方法を紹介します。",
+   "words": [
+    {
+     "text": "つける",
+     "start": 3.08,
+     "end": 3.38,
+     "speaker": "A"
+    },
+    {
+     "text": "方法",
+     "start": 3.38,
+     "end": 3.74,
+     "speaker": "A"
+    },
+    {
+     "text": "を",
+     "start": 3.74,
+     "end": 3.8,
+     "speaker": "A"
+    },
+    {
+     "text": "紹介",
+     "start": 3.8,
+     "end": 4.24,
+     "speaker": "A"
+    },
+    {
+     "text": "します。",
+     "start": 4.24,
+     "end": 4.74,
+     "speaker": "A"
+    }
+   ],
+   "translation": "add subtitles to a video."
+  },
+  {
+   "start": 5.65,
+   "end": 6.89,
+   "text": "日本語と英語の 2 つの",
+   "words": [
+    {
+     "text": "日本",
+     "start": 5.7,
+     "end": 5.77,
+     "speaker": "A"
+    },
+    {
+     "text": "語",
+     "start": 5.77,
+     "end": 5.84,
+     "speaker": "A"
+    },
+    {
+     "text": "と",
+     "start": 5.84,
+     "end": 6.0,
+     "speaker": "A"
+    },
+    {
+     "text": "英語",
+     "start": 6.0,
+     "end": 6.28,
+     "speaker": "A"
+    },
+    {
+     "text": "の",
+     "start": 6.28,
+     "end": 6.48,
+     "speaker": "A"
+    },
+    {
+     "text": "2",
+     "start": 6.48,
+     "end": 6.58,
+     "speaker": "A"
+    },
+    {
+     "text": "つ",
+     "start": 6.58,
+     "end": 6.8,
+     "speaker": "A"
+    },
+    {
+     "text": "の",
+     "start": 6.8,
+     "end": 6.94,
+     "speaker": "A"
+    }
+   ],
+   "translation": "You can display two languages,"
+  },
+  {
+   "start": 6.89,
+   "end": 8.81,
+   "text": "字幕を表示できます。",
+   "words": [
+    {
+     "text": "字幕",
+     "start": 6.94,
+     "end": 7.28,
+     "speaker": "A"
+    },
+    {
+     "text": "を",
+     "start": 7.28,
+     "end": 7.42,
+     "speaker": "A"
+    },
+    {
+     "text": "表示",
+     "start": 7.42,
+     "end": 7.72,
+     "speaker": "A"
+    },
+    {
+     "text": "できます。",
+     "start": 7.72,
+     "end": 8.21,
+     "speaker": "A"
+    }
+   ],
+   "translation": "Japanese and English subtitles."
+  }
+ ]
+}

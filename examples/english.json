@@ -1,0 +1,179 @@
+{
+ "mode": "english",
+ "label": "English",
+ "cues": [
+  {
+   "start": 0.35,
+   "end": 1.97,
+   "text": "Captions don't have",
+   "words": [
+    {
+     "text": "Captions",
+     "start": 0.4,
+     "end": 1.0,
+     "speaker": "A"
+    },
+    {
+     "text": "don't",
+     "start": 1.08,
+     "end": 1.5,
+     "speaker": "A"
+    },
+    {
+     "text": "have",
+     "start": 1.58,
+     "end": 1.94,
+     "speaker": "A"
+    }
+   ]
+  },
+  {
+   "start": 1.97,
+   "end": 4.25,
+   "text": "to stop at English.",
+   "words": [
+    {
+     "text": "to",
+     "start": 2.02,
+     "end": 2.26,
+     "speaker": "A"
+    },
+    {
+     "text": "stop",
+     "start": 2.34,
+     "end": 2.7,
+     "speaker": "A"
+    },
+    {
+     "text": "at",
+     "start": 2.78,
+     "end": 3.02,
+     "speaker": "A"
+    },
+    {
+     "text": "English.",
+     "start": 3.1,
+     "end": 3.7,
+     "speaker": "A"
+    }
+   ]
+  },
+  {
+   "start": 4.25,
+   "end": 7.03,
+   "text": "Pick a mode, drop in a video,",
+   "words": [
+    {
+     "text": "Pick",
+     "start": 4.3,
+     "end": 4.66,
+     "speaker": "A"
+    },
+    {
+     "text": "a",
+     "start": 4.74,
+     "end": 4.92,
+     "speaker": "A"
+    },
+    {
+     "text": "mode,",
+     "start": 5.0,
+     "end": 5.42,
+     "speaker": "A"
+    },
+    {
+     "text": "drop",
+     "start": 5.5,
+     "end": 5.86,
+     "speaker": "A"
+    },
+    {
+     "text": "in",
+     "start": 5.94,
+     "end": 6.18,
+     "speaker": "A"
+    },
+    {
+     "text": "a",
+     "start": 6.26,
+     "end": 6.44,
+     "speaker": "A"
+    },
+    {
+     "text": "video,",
+     "start": 6.52,
+     "end": 7.0,
+     "speaker": "A"
+    }
+   ]
+  },
+  {
+   "start": 7.03,
+   "end": 9.17,
+   "text": "and every word shows up",
+   "words": [
+    {
+     "text": "and",
+     "start": 7.08,
+     "end": 7.38,
+     "speaker": "A"
+    },
+    {
+     "text": "every",
+     "start": 7.46,
+     "end": 7.88,
+     "speaker": "A"
+    },
+    {
+     "text": "word",
+     "start": 7.96,
+     "end": 8.32,
+     "speaker": "A"
+    },
+    {
+     "text": "shows",
+     "start": 8.4,
+     "end": 8.82,
+     "speaker": "A"
+    },
+    {
+     "text": "up",
+     "start": 8.9,
+     "end": 9.14,
+     "speaker": "A"
+    }
+   ]
+  },
+  {
+   "start": 9.17,
+   "end": 11.74,
+   "text": "right when it's spoken.",
+   "words": [
+    {
+     "text": "right",
+     "start": 9.22,
+     "end": 9.64,
+     "speaker": "A"
+    },
+    {
+     "text": "when",
+     "start": 9.72,
+     "end": 10.08,
+     "speaker": "A"
+    },
+    {
+     "text": "it's",
+     "start": 10.16,
+     "end": 10.52,
+     "speaker": "A"
+    },
+    {
+     "text": "spoken.",
+     "start": 10.6,
+     "end": 11.14,
+     "speaker": "A"
+    }
+   ]
+  }
+ ]
+}

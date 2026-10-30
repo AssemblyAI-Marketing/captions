@@ -1,0 +1,167 @@
+{
+ "status": "completed",
+ "text": "नमस्ते, आज हम देखेंगे कि कैप्शन कैसे बनते हैं। हर शब्द ठीक उसी समय स्क्रीन पर आता है जब वह बोला जाता है।",
+ "words": [
+  {
+   "text": "नमस्ते,",
+   "start": 400,
+   "end": 940,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "आज",
+   "start": 1020,
+   "end": 1260,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "हम",
+   "start": 1340,
+   "end": 1580,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "देखेंगे",
+   "start": 1660,
+   "end": 2200,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "कि",
+   "start": 2280,
+   "end": 2520,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "कैप्शन",
+   "start": 2600,
+   "end": 3080,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "कैसे",
+   "start": 3160,
+   "end": 3520,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "बनते",
+   "start": 3600,
+   "end": 3960,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "हैं।",
+   "start": 4040,
+   "end": 4400,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "हर",
+   "start": 5000,
+   "end": 5240,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "शब्द",
+   "start": 5320,
+   "end": 5680,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "ठीक",
+   "start": 5760,
+   "end": 6060,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "उसी",
+   "start": 6140,
+   "end": 6440,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "समय",
+   "start": 6520,
+   "end": 6820,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "स्क्रीन",
+   "start": 6900,
+   "end": 7440,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "पर",
+   "start": 7520,
+   "end": 7760,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "आता",
+   "start": 7840,
+   "end": 8140,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "है",
+   "start": 8220,
+   "end": 8460,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "जब",
+   "start": 8540,
+   "end": 8780,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "वह",
+   "start": 8860,
+   "end": 9100,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "बोला",
+   "start": 9180,
+   "end": 9540,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "जाता",
+   "start": 9620,
+   "end": 9980,
+   "speaker": "A",
+   "confidence": 0.97
+  },
+  {
+   "text": "है।",
+   "start": 10060,
+   "end": 10360,
+   "speaker": "A",
+   "confidence": 0.97
+  }
+ ]
+}

@@ -1,0 +1,130 @@
+{
+ "mode": "korean+english",
+ "label": "Korean + English",
+ "cues": [
+  {
+   "start": 0,
+   "end": 1.151,
+   "text": "안녕하세요.",
+   "words": [
+    {
+     "text": "안녕하세요.",
+     "start": 0.031,
+     "end": 0.551,
+     "speaker": "A"
+    }
+   ],
+   "translation": "Hello."
+  },
+  {
+   "start": 1.561,
+   "end": 3.321,
+   "text": "오늘은 영상에 자막을",
+   "words": [
+    {
+     "text": "오늘은",
+     "start": 1.611,
+     "end": 1.911,
+     "speaker": "A"
+    },
+    {
+     "text": "영상에",
+     "start": 1.911,
+     "end": 2.731,
+     "speaker": "A"
+    },
+    {
+     "text": "자막을",
+     "start": 2.731,
+     "end": 3.371,
+     "speaker": "A"
+    }
+   ],
+   "translation": "Today, I'll show you how to"
+  },
+  {
+   "start": 3.321,
+   "end": 5.811,
+   "text": "넣는 방법을 보여드릴게요.",
+   "words": [
+    {
+     "text": "넣는",
+     "start": 3.371,
+     "end": 3.751,
+     "speaker": "A"
+    },
+    {
+     "text": "방법을",
+     "start": 3.751,
+     "end": 4.431,
+     "speaker": "A"
+    },
+    {
+     "text": "보여드릴게요.",
+     "start": 4.431,
+     "end": 5.211,
+     "speaker": "A"
+    }
+   ],
+   "translation": "add subtitles to a video."
+  },
+  {
+   "start": 6.081,
+   "end": 7.761,
+   "text": "한국어와 영어 자막을",
+   "words": [
+    {
+     "text": "한국어와",
+     "start": 6.131,
+     "end": 6.791,
+     "speaker": "A"
+    },
+    {
+     "text": "영어",
+     "start": 6.791,
+     "end": 7.191,
+     "speaker": "A"
+    },
+    {
+     "text": "자막을",
+     "start": 7.191,
+     "end": 7.811,
+     "speaker": "A"
+    }
+   ],
+   "translation": "You can view both Korean and English"
+  },
+  {
+   "start": 7.761,
+   "end": 9.811,
+   "text": "함께 볼 수 있어요.",
+   "words": [
+    {
+     "text": "함께",
+     "start": 7.811,
+     "end": 8.151,
+     "speaker": "A"
+    },
+    {
+     "text": "볼",
+     "start": 8.151,
+     "end": 8.591,
+     "speaker": "A"
+    },
+    {
+     "text": "수",
+     "start": 8.591,
+     "end": 8.831,
+     "speaker": "A"
+    },
+    {
+     "text": "있어요.",
+     "start": 8.831,
+     "end": 9.211,
+     "speaker": "A"
+    }
+   ],
+   "translation": "subtitles at the same time."
+  }
+ ]
+}

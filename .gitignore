@@ -1,0 +1,27 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+# your videos and everything generated from them
+*.mp4
+*.mov
+*.mkv
+*.webm
+*.mp3
+*.wav
+*.m4a
+*.transcript.json
+*.preview.html
+*.srt
+*.vtt
+*.ass
+out/
+*.fcpxmld/
+*.fcpxml
+*.premiere.xml
+*.llm-request.json
+*.llm-answers.json
+*.mcp-transcript.json
+# your fonts stay yours: nothing in fonts/ is committed except its README
+fonts/*
+!fonts/README.md
