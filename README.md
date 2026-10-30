@@ -167,4 +167,6 @@ Unofficial: a side project by someone who works at AssemblyAI, not an AssemblyAI
 
 ## License
 
-MIT
+[MIT](LICENSE): use, change and share it freely, including commercially, as long as the license
+notice stays with the code. It covers everything in this repo, `live/` included. No font files are included
+(see [`fonts/`](fonts/)), and the AssemblyAI API is used under your own AssemblyAI account and its terms.

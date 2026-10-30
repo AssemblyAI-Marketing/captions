@@ -160,3 +160,7 @@ live/
 ├── api/index.py    Vercel entry point (oauth mode)
 └── vercel.json     routes every path to api/index.py
 ```
+
+## License
+
+[MIT](../LICENSE), like the rest of this repo.
