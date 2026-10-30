@@ -417,6 +417,17 @@ class OutboundAllowlist(unittest.TestCase):
                 server.allowed_url(url)
 
     def test_fetch_refuses_before_any_network_call(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(server.RefusedURL):
             server.fetch("https://169.254.169.254/latest/meta-data/")
+
+    def test_refused_url_takes_the_unreachable_path(self):
+        """Callers catch OSError for "AssemblyAI could not be reached": a refusal must land there, not crash."""
+        self.assertTrue(issubclass(server.RefusedURL, OSError))
+
+        def refuse(url, **kw):
+            raise server.RefusedURL(url)
+
+        app = server.App(mode="dev", api_key=API_KEY, secret="s" * 32, fetch=refuse)
+        r = call(app, "POST", "/api/token", host="127.0.0.1:8787")
+        self.assertEqual(r.status, 503)
 

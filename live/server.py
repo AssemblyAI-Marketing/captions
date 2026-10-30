@@ -105,20 +105,24 @@ class _NoRedirect(urllib.request.HTTPRedirectHandler):
 _opener = urllib.request.build_opener(_NoRedirect)
 
 
+class RefusedURL(OSError, ValueError):
+    """A URL outside ALLOWED_HOSTS. An OSError, so every caller's "AssemblyAI could not be reached" path handles it."""
+
+
 def allowed_url(url):
-    """The URL, if it's https (http only on loopback, for local fakes) to an allowlisted host; else ValueError."""
+    """The URL, if it's https (http only on loopback, for local fakes) to an allowlisted host; else RefusedURL."""
     parts = urllib.parse.urlsplit(url)
     host = (parts.hostname or "").lower()
     if host not in ALLOWED_HOSTS or parts.username or parts.password:
-        raise ValueError(f"refusing to call {host or url!r}: not an AssemblyAI host this server is configured for")
+        raise RefusedURL(f"refusing to call {host or url!r}: not an AssemblyAI host this server is configured for")
     if parts.scheme != "https" and not (parts.scheme == "http" and host in LOOPBACK):
-        raise ValueError(f"refusing to call {url!r}: https only")
+        raise RefusedURL(f"refusing to call {url!r}: https only")
     return url
 
 
 def fetch(url, method="GET", headers=None, data=None):
-    """(status, JSON body or None). Raises OSError when AssemblyAI can't be reached, ValueError for a URL
-    outside ALLOWED_HOSTS."""
+    """(status, JSON body or None). Raises OSError when AssemblyAI can't be reached, including RefusedURL for a
+    URL outside ALLOWED_HOSTS."""
     req = urllib.request.Request(allowed_url(url), data=data, headers={"accept": "application/json", **(headers or {})},
                                  method=method)
     try:
