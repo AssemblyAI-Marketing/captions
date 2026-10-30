@@ -46,11 +46,11 @@ Any other pair works too: ask for "captions in Dutch with Turkish underneath". T
 Python 3.10+, standard library only. `ffmpeg`/`ffprobe` for editor projects.
 
 ```bash
-git clone https://github.com/AssemblyAI-Marketing/multilingual-captions-aai.git
+git clone https://github.com/AssemblyAI-Marketing/captions.git
 ```
 
 ```bash
-cd multilingual-captions-aai && cp .env.example .env
+cd captions && cp .env.example .env
 ```
 
 Put your [AssemblyAI API key](https://www.assemblyai.com/dashboard) in `.env`, then:
