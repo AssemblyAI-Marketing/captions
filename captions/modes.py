@@ -1,7 +1,7 @@
 """Words in, caption cues out, for one mode (see languages.py).
 
-Romanizing (Hinglish in the English alphabet) and translating (the second line of dual captions) are small
-language tasks. With an API key they go through AssemblyAI's LLM Gateway. Without one (for example when the
+Romanizing (Hinglish in the English alphabet), translating (the second line of dual captions) and picking key
+words (the social style) are small language tasks. With an API key they go through AssemblyAI's LLM Gateway. Without one (for example when the
 transcript came from the AssemblyAI MCP server over OAuth), the CLI writes them to <name>.llm-request.json for
 the agent to answer in <name>.llm-answers.json, then picks the answers up on the next run.
 """
@@ -24,6 +24,14 @@ TRANSLATE = (
     "subtitle text. Lines can be fragments of a longer sentence: translate only what is in that line, "
     "so it stays in sync with the speech. If a line is already in {language}, return it unchanged."
 )
+
+KEYWORDS = (
+    "Each item is one caption line from a video. Pick the words a viewer should remember from each line: the heart "
+    "of what's being said, such as a name, a number, a product or the one word that carries the point. At most "
+    "{n} words per line, and none at all for a line with nothing worth highlighting (fillers, greetings, asides). "
+    "Copy each word exactly as it is written in the line. Return a list of words for each line."
+)
+KEY_WORDS = 2       # the most key words highlighted per caption line
 
 
 class NeedsAgent(Exception):
@@ -79,13 +87,44 @@ def translate(cue_list, language, llm):
     return cue_list
 
 
-def build(words, mode, llm=None, glue=frozenset(), max_width=32):
-    """Words in, caption cues out, for one Mode."""
+def bare(text):
+    return "".join(ch for ch in text.lower() if ch.isalnum())
+
+
+def keywords(cue_list, llm, per_cue=KEY_WORDS):
+    """Mark up to per_cue key words on each cue ("key": True on the word) for the social style."""
+    out = llm.run("keywords", [c["text"] for c in cue_list], KEYWORDS.format(n=per_cue),
+                  same_shape=lambda a, b: isinstance(b, list))
+    for c, picked in zip(cue_list, out):
+        wanted = {bare(str(k)) for k in picked} - {""}
+        marked = 0
+        for w in c["words"]:
+            # the budget is enforced here too: a longer answer only highlights its first few words
+            if marked < per_cue and bare(w["text"]) in wanted:
+                w["key"] = True
+                marked += 1
+    return cue_list
+
+
+def build(words, mode, llm=None, glue=frozenset(), max_width=32, profile=None, key_words=False):
+    """Words in, caption cues out, for one Mode.
+
+    key_words: also mark key words (one more language task, see keywords()). When the translation and the key
+    words both wait for the agent, they go into one request file.
+    """
     llm = llm or Llm()
     if mode.romanize:
         words = romanize(words, llm)
-    cue_list = lines.cues(words, glue=glue, max_width=max_width)
+    cue_list = lines.cues(words, glue=glue, max_width=max_width, profile=profile)
+    waiting = None
     if mode.translate_to:
         from .languages import LANGUAGES
-        translate(cue_list, LANGUAGES[mode.translate_to][1], llm)
+        try:
+            translate(cue_list, LANGUAGES[mode.translate_to][1], llm)
+        except NeedsAgent as need:
+            waiting = need
+    if key_words:
+        keywords(cue_list, llm)
+    if waiting:
+        raise waiting
     return cue_list

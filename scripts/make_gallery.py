@@ -1,5 +1,6 @@
-"""Render docs/gallery/<mode>.png from examples/*.json: one caption line per style, mid-line so the word-by-word
-reveal shows. Needs ffmpeg built with libass.
+"""Render docs/gallery/<mode>.png from examples/*.json: one caption line per mode, mid-line so the word-by-word
+reveal shows. Then docs/gallery/styles/<style>.png and <style>-vertical.png: each --style on a 16:9 and a 9:16 frame,
+from examples/transcripts/interview.json with speaker names on. Needs ffmpeg built with libass.
 
     python3 scripts/make_gallery.py
 """
@@ -12,7 +13,7 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-from captions import fonts, languages, writers  # noqa: E402
+from captions import assemblyai, fonts, languages, lines, profiles, writers  # noqa: E402
 
 OUT = os.path.join(ROOT, "docs", "gallery")
 W, H, TOP, CROP = 1920, 1080, 790, 270
@@ -51,12 +52,46 @@ def render(path):
     return png
 
 
+# what an LLM might pick for the interview sample: the gallery stays offline
+KEY = {"sound", "off,", "phone,", "captions", "vertical", "Short", "lines,"}
+
+
+def render_style(style, size, profile, t, png, crop=None):
+    with open(os.path.join(ROOT, "examples", "transcripts", "interview.json"), encoding="utf-8") as f:
+        ws = assemblyai.words(json.load(f))
+    cues = lines.cues(ws, max_width=profile.width, profile=profile)
+    if style == "social":
+        for c in cues:
+            for w in c["words"]:
+                w["key"] = w["text"] in KEY
+    W, H = size
+    font = fonts.for_libass(fonts.resolve(None, "latin")).family
+    with tempfile.TemporaryDirectory() as d:
+        ass = os.path.join(d, "g.ass")
+        writers.ass(cues, ass, size, True, font, style=style, profile=profile, speakers="always")
+        vf = writers.ass_filter(ass) + (f",crop={crop}" if crop else "") + (",scale=1280:-2" if W > H else ",scale=360:-2")
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i",
+                        f"gradients=s={W}x{H}:c0=0x3a6186:c1=0xd8a47f:x0=0:y0=0:x1={W}:y1={H}:speed=0:seed=7:d={t + 1:.2f}",
+                        "-vf", vf, "-ss", f"{t:.2f}", "-frames:v", "1", "-update", "1", png], cwd=d, check=True)
+    return png
+
+
+def styles():
+    out = os.path.join(OUT, "styles")
+    os.makedirs(out, exist_ok=True)
+    for style in writers.STYLES:
+        # mid-way through "Most people watch with the sound off," (speaker B)
+        print(render_style(style, (W, H), profiles.HORIZONTAL, 11.4, os.path.join(out, f"{style}.png"), f"{W}:{CROP}:0:{TOP}"))
+        print(render_style(style, (1080, 1920), profiles.VERTICAL, 12.0, os.path.join(out, f"{style}-vertical.png")))
+
+
 def main():
     if not writers.has_libass():
         raise SystemExit("needs ffmpeg built with libass")
     os.makedirs(OUT, exist_ok=True)
     for p in sorted(glob.glob(os.path.join(ROOT, "examples", "*.json"))):
         print(render(p))
+    styles()
 
 
 if __name__ == "__main__":
