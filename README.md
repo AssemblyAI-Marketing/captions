@@ -43,7 +43,7 @@ Any other pair works too: ask for "captions in Dutch with Turkish underneath". T
 
 ## On the command line
 
-Python 3.9+, standard library only. `ffmpeg`/`ffprobe` for editor projects.
+Python 3.10+, standard library only. `ffmpeg`/`ffprobe` for editor projects.
 
 ```bash
 git clone https://github.com/AssemblyAI-Marketing/multilingual-captions-aai.git
