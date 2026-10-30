@@ -400,3 +400,23 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class OutboundAllowlist(unittest.TestCase):
+    """fetch() only calls AssemblyAI's configured hosts (SSRF hardening)."""
+
+    def test_assemblyai_hosts_allowed(self):
+        for url in (f"{server.ISSUER}/.well-known/oauth-authorization-server", f"{server.EXCHANGE_ORIGIN}/api/v2/oauth/api-key",
+                    f"{server.STREAMING_TOKEN_URL}?expires_in_seconds=60"):
+            self.assertEqual(server.allowed_url(url), url)
+
+    def test_other_hosts_refused(self):
+        for url in ("https://169.254.169.254/latest/meta-data/", "https://evil.example/token", "http://www.assemblyai.com/x",
+                    "https://user:pw@www.assemblyai.com/x", "file:///etc/passwd", "https://auth.assemblyai.com.evil.example/"):
+            with self.assertRaises(ValueError, msg=url):
+                server.allowed_url(url)
+
+    def test_fetch_refuses_before_any_network_call(self):
+        with self.assertRaises(ValueError):
+            server.fetch("https://169.254.169.254/latest/meta-data/")
+
