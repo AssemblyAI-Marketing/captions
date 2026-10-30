@@ -400,3 +400,34 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class OutboundAllowlist(unittest.TestCase):
+    """fetch() only calls AssemblyAI's configured hosts (SSRF hardening)."""
+
+    def test_assemblyai_hosts_allowed(self):
+        for url in (f"{server.ISSUER}/.well-known/oauth-authorization-server", f"{server.EXCHANGE_ORIGIN}/api/v2/oauth/api-key",
+                    f"{server.STREAMING_TOKEN_URL}?expires_in_seconds=60"):
+            self.assertEqual(server.allowed_url(url), url)
+
+    def test_other_hosts_refused(self):
+        for url in ("https://169.254.169.254/latest/meta-data/", "https://evil.example/token", "http://www.assemblyai.com/x",
+                    "https://user:pw@www.assemblyai.com/x", "file:///etc/passwd", "https://auth.assemblyai.com.evil.example/"):
+            with self.assertRaises(ValueError, msg=url):
+                server.allowed_url(url)
+
+    def test_fetch_refuses_before_any_network_call(self):
+        with self.assertRaises(server.RefusedURL):
+            server.fetch("https://169.254.169.254/latest/meta-data/")
+
+    def test_refused_url_takes_the_unreachable_path(self):
+        """Callers catch OSError for "AssemblyAI could not be reached": a refusal must land there, not crash."""
+        self.assertTrue(issubclass(server.RefusedURL, OSError))
+
+        def refuse(url, **kw):
+            raise server.RefusedURL(url)
+
+        app = server.App(mode="dev", api_key=API_KEY, secret="s" * 32, fetch=refuse)
+        r = call(app, "POST", "/api/token", host="127.0.0.1:8787")
+        self.assertEqual(r.status, 503)
+

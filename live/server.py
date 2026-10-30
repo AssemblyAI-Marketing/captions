@@ -89,11 +89,44 @@ def api_key_from_env(env=os.environ):
     return key or None
 
 
+# The only hosts this server talks to: AssemblyAI's sign-in, key exchange and streaming-token services. The OAuth
+# endpoints come from the issuer's metadata, so check every URL, not just the configured ones.
+ALLOWED_HOSTS = frozenset(urllib.parse.urlsplit(u).hostname for u in (ISSUER, EXCHANGE_ORIGIN, STREAMING_TOKEN_URL))
+LOOPBACK = frozenset({"localhost", "127.0.0.1", "::1"})
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Don't follow redirects: a redirect could lead outside the allowlist."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+_opener = urllib.request.build_opener(_NoRedirect)
+
+
+class RefusedURL(OSError, ValueError):
+    """A URL outside ALLOWED_HOSTS. An OSError, so every caller's "AssemblyAI could not be reached" path handles it."""
+
+
+def allowed_url(url):
+    """The URL, if it's https (http only on loopback, for local fakes) to an allowlisted host; else RefusedURL."""
+    parts = urllib.parse.urlsplit(url)
+    host = (parts.hostname or "").lower()
+    if host not in ALLOWED_HOSTS or parts.username or parts.password:
+        raise RefusedURL(f"refusing to call {host or url!r}: not an AssemblyAI host this server is configured for")
+    if parts.scheme != "https" and not (parts.scheme == "http" and host in LOOPBACK):
+        raise RefusedURL(f"refusing to call {url!r}: https only")
+    return url
+
+
 def fetch(url, method="GET", headers=None, data=None):
-    """(status, JSON body or None). Raises OSError when AssemblyAI can't be reached."""
-    req = urllib.request.Request(url, data=data, headers={"accept": "application/json", **(headers or {})}, method=method)
+    """(status, JSON body or None). Raises OSError when AssemblyAI can't be reached, including RefusedURL for a
+    URL outside ALLOWED_HOSTS."""
+    req = urllib.request.Request(allowed_url(url), data=data, headers={"accept": "application/json", **(headers or {})},
+                                 method=method)
     try:
-        with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
+        with _opener.open(req, timeout=TIMEOUT) as r:
             return r.status, _json(r.read())
     except urllib.error.HTTPError as e:
         with e:
