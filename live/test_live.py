@@ -156,7 +156,6 @@ class Callback(unittest.TestCase):
         self.assertEqual(r.status, 400)
         self.assertNotIn(server.SESSION_COOKIE, set_cookies(r))
         self.assertNotIn("/v1/oauth2/token", self.fake.paths())
-        self.assertEqual(self.app.sessions, {})
 
     def test_good_state_signs_in(self):
         r = self.callback({"code": "abc", "state": self.state})
@@ -197,7 +196,7 @@ class Callback(unittest.TestCase):
     def test_denied(self):
         r = self.callback({"error": "access_denied", "state": self.state})
         self.assertEqual(dict(r.headers)["Location"], "/?error=denied")
-        self.assertEqual(self.app.sessions, {})
+        self.assertNotIn(server.SESSION_COOKIE, set_cookies(r))
 
 
 class TokenRoute(unittest.TestCase):
@@ -237,11 +236,10 @@ class TokenRoute(unittest.TestCase):
 
     def test_cache_stops_at_rotation(self):
         app, fake, clock = make()
-        cookie = sign_in(app)
         fake.exchange = (200, {"api_key": USER_KEY, "api_key_rotates_at": "2027-01-15T08:00:10Z"})
         clock.t = server._timestamp("2027-01-15T08:00:00Z")
         fake.access = jwt(clock.t + 3600)
-        app.sessions[next(iter(app.sessions))].update(access_token=fake.access, expires_at=clock.t + 3600)
+        cookie = sign_in(app)
         call(app, "POST", "/api/token", cookie=cookie)
         clock.t += 11
         call(app, "POST", "/api/token", cookie=cookie)
@@ -253,7 +251,8 @@ class TokenRoute(unittest.TestCase):
         fake.exchange = (401, {"detail": "Unknown client"})
         r = call(app, "POST", "/api/token", cookie=cookie)
         self.assertEqual(r.status, 503)
-        self.assertEqual(len(app.sessions), 1)   # signing in again can't fix it, so the session stays
+        self.assertNotIn(server.SESSION_COOKIE, set_cookies(r))   # signing in again can't fix it: the session stays
+        self.assertIn("approved", json.loads(r.body)["detail"])
 
     def test_refused_token_signs_out(self):
         app, fake, _ = make()
@@ -261,7 +260,7 @@ class TokenRoute(unittest.TestCase):
         fake.exchange = (401, {"detail": "Token revoked"})
         r = call(app, "POST", "/api/token", cookie=cookie)
         self.assertEqual(r.status, 401)
-        self.assertEqual(app.sessions, {})
+        self.assertEqual(set_cookies(r)[server.SESSION_COOKIE], "")   # cleared
 
     def test_missing_scope(self):
         app, fake, _ = make()
@@ -287,10 +286,14 @@ class TokenRoute(unittest.TestCase):
         self.assertEqual(dict(urllib.parse.parse_qsl(refresh[3].decode()))["grant_type"], "refresh_token")
 
     def test_logout(self):
+        """Logout clears the session cookie. Sessions live in the cookie and the issuer has no revocation
+        endpoint, so a copy of the old cookie works until it expires (see SECURITY.md)."""
         app, _, _ = make()
         cookie = sign_in(app)
-        call(app, "POST", "/logout", cookie=cookie)
-        self.assertEqual(call(app, "POST", "/api/token", cookie=cookie).status, 401)
+        r = call(app, "POST", "/logout", cookie=cookie)
+        self.assertEqual(set_cookies(r)[server.SESSION_COOKIE], "")
+        self.assertIn("Max-Age=0", [v for k, v in r.headers if k == "Set-Cookie" and v.startswith(server.SESSION_COOKIE)][0])
+        self.assertEqual(call(app, "POST", "/api/token", cookie=f"{server.SESSION_COOKIE}=").status, 401)
 
 
 class Modes(unittest.TestCase):
@@ -441,4 +444,60 @@ class VercelEntry(unittest.TestCase):
         names = {t.id for node in tree.body if isinstance(node, ast.Assign) for t in node.targets if isinstance(t, ast.Name)}
         self.assertNotIn("app", names)
         self.assertIn("handler", {n.name for n in tree.body if isinstance(n, ast.ClassDef)})
+
+
+class StatelessSessions(unittest.TestCase):
+    """Sessions live in an encrypted cookie: on Vercel, requests land on different instances."""
+
+    def test_session_works_on_another_instance(self):
+        app, fake, clock = make()
+        cookie = sign_in(app)
+        other = server.App(mode="oauth", secret="s" * 32, fetch=fake, now=clock, service_token=SERVICE)
+        r = call(other, "POST", "/api/token", cookie=cookie)
+        self.assertEqual(r.status, 200, r.body)
+        self.assertTrue(json.loads(call(other, "GET", "/api/config", cookie=cookie).body)["signed_in"])
+
+    def test_other_secret_or_tampering_refused(self):
+        app, fake, clock = make()
+        cookie = sign_in(app)
+        stranger = server.App(mode="oauth", secret="t" * 32, fetch=fake, now=clock, service_token=SERVICE)
+        self.assertEqual(call(stranger, "POST", "/api/token", cookie=cookie).status, 401)
+        name, value = cookie.split("=", 1)
+        flipped = value[:-6] + ("A" if value[-6] != "A" else "B") + value[-5:]
+        self.assertEqual(call(app, "POST", "/api/token", cookie=f"{name}={flipped}").status, 401)
+
+    def test_tokens_not_readable_in_the_cookie(self):
+        app, fake, _ = make()
+        cookie = sign_in(app)
+        raw = server.unb64url(cookie.split("=", 1)[1][3:])
+        for secret in (fake.access, "refresh_1"):
+            self.assertNotIn(secret.encode(), raw)
+            self.assertNotIn(secret, cookie)
+
+    def test_expired_session_signs_in_again(self):
+        app, _, clock = make()
+        cookie = sign_in(app)
+        clock.t += server.SESSION_SECONDS + 1
+        self.assertEqual(call(app, "POST", "/api/token", cookie=cookie).status, 401)
+
+    def test_refresh_rewrites_the_cookie(self):
+        app, fake, clock = make()
+        cookie = sign_in(app)
+        clock.t += 3600                                  # the access token expired; the session hasn't
+        fake.access = jwt(clock.t + 3600)
+        r = call(app, "POST", "/api/token", cookie=cookie)
+        self.assertEqual(r.status, 200, r.body)
+        self.assertIn("refresh_token", [c[3] and urllib.parse.parse_qs(c[3].decode()).get("grant_type", [""])[0]
+                                        for c in fake.calls if c[1].endswith("/v1/oauth2/token")][-1])
+        renewed = f"{server.SESSION_COOKIE}={set_cookies(r)[server.SESSION_COOKIE]}"
+        self.assertNotEqual(renewed, cookie)
+        self.assertEqual(app.session({"cookie": renewed})["access_token"], fake.access)
+
+    def test_large_token_keeps_cookie_small(self):
+        app, fake, _ = make()
+        fake.access = jwt(fake.now() + 3600) + "x" * 5000   # bigger than a cookie can hold
+        cookie = sign_in(app)
+        self.assertLess(len(cookie), 4000)
+        self.assertNotIn("access_token", app.session({"cookie": cookie}))
+        self.assertEqual(call(app, "POST", "/api/token", cookie=cookie).status, 200)   # refreshes on demand
 

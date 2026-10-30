@@ -76,7 +76,7 @@ Vercel gives every function request the project's OIDC token. So deploying this 
    - `ASSEMBLYAI_OAUTH_CLIENT_ID=` from `LIVE_PUBLIC_URL=https://<your domain> python3 live/server.py --register`.
 3. Deploy, and send AssemblyAI the approval request below.
 
-Sign-ins live in the function's memory. A request that lands on a fresh instance asks the visitor to sign in again, which is one click because AssemblyAI remembers the consent. That's fine for a demo. For heavier use, keep sessions in a shared store such as Redis.
+Sign-ins live in an encrypted cookie (sealed with `LIVE_SESSION_SECRET`), not in the function's memory, so every instance recognizes them. Rotating the secret signs everyone out.
 
 Elsewhere, set `ASSEMBLYAI_SERVICE_TOKEN` to whatever token AssemblyAI agrees to accept.
 
