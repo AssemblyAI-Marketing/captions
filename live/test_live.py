@@ -431,3 +431,14 @@ class OutboundAllowlist(unittest.TestCase):
         r = call(app, "POST", "/api/token", host="127.0.0.1:8787")
         self.assertEqual(r.status, 503)
 
+
+class VercelEntry(unittest.TestCase):
+    def test_no_module_level_app(self):
+        """Vercel's Python runtime takes a module-level "app" for a WSGI/ASGI callable: the entry must not define one."""
+        import ast
+        with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "api", "index.py"), encoding="utf-8") as f:
+            tree = ast.parse(f.read())
+        names = {t.id for node in tree.body if isinstance(node, ast.Assign) for t in node.targets if isinstance(t, ast.Name)}
+        self.assertNotIn("app", names)
+        self.assertIn("handler", {n.name for n in tree.body if isinstance(n, ast.ClassDef)})
+

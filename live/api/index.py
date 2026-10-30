@@ -10,8 +10,10 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import server  # noqa: E402
 
-app = server.App.from_env()
-if app.mode != "oauth":
+# Not named "app": Vercel's Python runtime treats a module-level "app" as a WSGI/ASGI callable and fails every
+# request with "Could not determine the application interface". It serves the "handler" class below instead.
+live_app = server.App.from_env()
+if live_app.mode != "oauth":
     raise SystemExit("Deploy with LIVE_MODE=oauth: dev mode spends one API key and only serves localhost.")
 
 
@@ -19,4 +21,4 @@ class handler(server.Handler):
     pass
 
 
-handler.app = app
+handler.app = live_app
