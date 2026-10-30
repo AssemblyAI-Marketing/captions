@@ -47,7 +47,7 @@ SESSION_COOKIE = "aai_live"
 LOGIN_COOKIE = "aai_live_login"
 SESSION_SECONDS = 12 * 3600
 LOGIN_SECONDS = 600
-MAX_SESSIONS = 1000
+COOKIE_LIMIT = 3800                 # browsers keep at most ~4096 bytes per cookie, name and attributes included
 MAX_CACHE_SECONDS = 300             # re-exchange at least this often, to notice a revoked connection (as the MCP does)
 MAX_CACHE_ENTRIES = 1000
 TIMEOUT = 10
@@ -174,7 +174,10 @@ class App:
         self.service_token, self.fetch, self.now, self.on_vercel = service_token, fetch, now, on_vercel
         self.secure = self.public_url.startswith("https://")
         self.metadata = None
-        self.sessions = {}      # session id -> {"access_token", "refresh_token", "expires_at", "until"}
+        # Sessions live in the visitor's cookie, encrypted and authenticated with the secret, not in this process:
+        # on Vercel each request can land on a different instance, so server memory can't hold a sign-in.
+        self.enc_key = hmac.new(self.secret, b"live-captions session encryption", hashlib.sha256).digest()
+        self.mac_key = hmac.new(self.secret, b"live-captions session authentication", hashlib.sha256).digest()
         self.keys = {}          # sha256(access token) -> (api key, cache until)
         self.lock = threading.Lock()
 
@@ -241,35 +244,37 @@ class App:
             if host not in ("localhost", "127.0.0.1", "[::1]") or self.on_vercel:
                 return Response(403, {"error": "dev_mode_is_local", "detail": "Dev mode only serves this machine. "
                                       "Use LIVE_MODE=oauth to let others sign in with their own account."})
-            key = self.api_key
+            key, renew = self.api_key, []
         else:
-            sid, session = self.session_entry(headers)
+            session = self.session(headers)
             if not session:
                 return Response(401, {"error": "sign_in"})
-            access = self.fresh_access_token(sid, session)
-            if not access:
+            session, refreshed = self.fresh_session(session)
+            if not session:
                 return Response(401, {"error": "sign_in"}, headers=[("Set-Cookie", self.clear(SESSION_COOKIE))])
-            kind, value = self.exchange(access, headers)
+            renew = [("Set-Cookie", self.session_cookie(session))] if refreshed else []
+            kind, value = self.exchange(session["access_token"], headers)
             if kind == "rejected":
-                self.drop(sid)
                 return Response(401, {"error": "sign_in", "detail": value},
                                 headers=[("Set-Cookie", self.clear(SESSION_COOKIE))])
             if kind == "insufficient_scope":
-                return Response(403, {"error": "insufficient_scope", "detail": value})
+                return Response(403, {"error": "insufficient_scope", "detail": value}, headers=renew)
             if kind == "unavailable":
-                return Response(503, {"error": "temporarily_unavailable", "detail": value}, headers=[("Retry-After", "5")])
+                return Response(503, {"error": "temporarily_unavailable", "detail": value},
+                                headers=[("Retry-After", "5"), *renew])
             key = value
         try:
             status, body = self.fetch(f"{STREAMING_TOKEN_URL}?expires_in_seconds={STREAMING_TOKEN_SECONDS}",
                                       headers={"authorization": key})
         except OSError:
-            return Response(503, {"error": "temporarily_unavailable", "detail": "AssemblyAI could not be reached"})
+            return Response(503, {"error": "temporarily_unavailable", "detail": "AssemblyAI could not be reached"},
+                            headers=renew)
         token = body.get("token") if isinstance(body, dict) else None
         if status != 200 or not isinstance(token, str):
             detail = detail_of(body, status).replace(key, "[key]")
             hint = " Check ASSEMBLYAI_API_KEY." if self.mode == "dev" and 400 <= status < 500 and status != 429 else ""
-            return Response(502, {"error": "no_streaming_token", "detail": f"AssemblyAI: {detail}.{hint}"})
-        return Response(200, {"token": token, "expires_in_seconds": STREAMING_TOKEN_SECONDS})
+            return Response(502, {"error": "no_streaming_token", "detail": f"AssemblyAI: {detail}.{hint}"}, headers=renew)
+        return Response(200, {"token": token, "expires_in_seconds": STREAMING_TOKEN_SECONDS}, headers=renew)
 
     def exchange(self, access_token, headers):
         """("key", api key) | ("rejected" | "insufficient_scope" | "unavailable", detail). Like src/oauth.ts in
@@ -397,12 +402,8 @@ class App:
                                      "redirect_uri": self.redirect_uri, "code_verifier": login["verifier"]})
         if not tokens:
             return redirect("/?error=signin", clear_login)
-        sid = secrets.token_urlsafe(32)
-        with self.lock:
-            if len(self.sessions) >= MAX_SESSIONS:
-                self.sessions.pop(next(iter(self.sessions)))
-            self.sessions[sid] = {**tokens, "until": self.now() + SESSION_SECONDS}
-        return redirect("/", clear_login, ("Set-Cookie", self.cookie(SESSION_COOKIE, self.sign(sid), SESSION_SECONDS)))
+        session = {**tokens, "until": self.now() + SESSION_SECONDS}
+        return redirect("/", clear_login, ("Set-Cookie", self.session_cookie(session)))
 
     def token_request(self, form):
         """Tokens from the token endpoint, or None. Keeps only what we need, server-side."""
@@ -423,40 +424,68 @@ class App:
         return {"access_token": access, "refresh_token": body.get("refresh_token") or form.get("refresh_token"),
                 "expires_at": expires}
 
-    def fresh_access_token(self, sid, session):
-        """The session's access token, refreshed when it expires within a minute. None: sign in again."""
-        if session.get("expires_at") and session["expires_at"] - 60 < self.now():
-            refreshed = session.get("refresh_token") and self.token_request(
-                {"grant_type": "refresh_token", "refresh_token": session["refresh_token"]})
-            if not refreshed:
-                self.drop(sid)
-                return None
-            with self.lock:
-                session.update(refreshed)
-        return session["access_token"]
+    def fresh_session(self, session):
+        """(session, refreshed): the access token refreshed when it's missing or expires within a minute.
+        (None, False): sign in again."""
+        expiring = not session.get("access_token") or (session.get("expires_at") and session["expires_at"] - 60 < self.now())
+        if not expiring:
+            return session, False
+        refreshed = session.get("refresh_token") and self.token_request(
+            {"grant_type": "refresh_token", "refresh_token": session["refresh_token"]})
+        return ({**session, **refreshed}, True) if refreshed else (None, False)
 
     def logout(self, query, headers):
-        sid, _ = self.session_entry(headers)
-        self.drop(sid)
         return redirect("/", ("Set-Cookie", self.clear(SESSION_COOKIE)))
 
     # ----- sessions and cookies -----
 
     def session(self, headers):
-        return self.session_entry(headers)[1]
+        """The signed-in session from the cookie, or None (missing, tampered, another secret, or expired)."""
+        session = self.unseal(self.cookies(headers).get(SESSION_COOKIE))
+        if not isinstance(session, dict) or session.get("until", 0) < self.now():
+            return None
+        return session
 
-    def session_entry(self, headers):
-        sid = self.unsign(self.cookies(headers).get(SESSION_COOKIE))
-        with self.lock:
-            session = self.sessions.get(sid) if sid else None
-            if session and session["until"] < self.now():
-                self.sessions.pop(sid, None)
-                session = None
-        return sid, session
+    def session_cookie(self, session):
+        """The session as a cookie. If the access token makes it too big, keep the refresh token: a request
+        then refreshes for a new access token."""
+        max_age = max(1, int(session["until"] - self.now()))
+        value = self.seal(session)
+        if len(value) > COOKIE_LIMIT and session.get("refresh_token"):
+            value = self.seal({k: v for k, v in session.items() if k not in ("access_token", "expires_at")})
+        return self.cookie(SESSION_COOKIE, value, max_age)
 
-    def drop(self, sid):
-        with self.lock:
-            self.sessions.pop(sid, None)
+    def seal(self, data):
+        """Encrypt-then-MAC with the standard library: an HMAC-SHA256 keystream (counter mode) under a random
+        nonce, then an HMAC-SHA256 tag over version, nonce and ciphertext. Keys come from LIVE_SESSION_SECRET."""
+        plain = json.dumps(data, separators=(",", ":")).encode()
+        nonce = secrets.token_bytes(16)
+        cipher = bytes(a ^ b for a, b in zip(plain, self._keystream(nonce, len(plain))))
+        tag = hmac.new(self.mac_key, b"v1" + nonce + cipher, hashlib.sha256).digest()
+        return "v1." + b64url(nonce + cipher + tag)
+
+    def unseal(self, value):
+        if not value or not value.startswith("v1."):
+            return None
+        try:
+            raw = unb64url(value[3:])
+        except ValueError:
+            return None
+        if len(raw) < 16 + 32:
+            return None
+        nonce, cipher, tag = raw[:16], raw[16:-32], raw[-32:]
+        if not hmac.compare_digest(tag, hmac.new(self.mac_key, b"v1" + nonce + cipher, hashlib.sha256).digest()):
+            return None
+        plain = bytes(a ^ b for a, b in zip(cipher, self._keystream(nonce, len(cipher))))
+        try:
+            return json.loads(plain)
+        except ValueError:
+            return None
+
+    def _keystream(self, nonce, length):
+        blocks = (hmac.new(self.enc_key, nonce + i.to_bytes(4, "big"), hashlib.sha256).digest()
+                  for i in range(-(-length // 32)))
+        return b"".join(blocks)[:length]
 
     def sign(self, value):
         return f"{value}.{b64url(hmac.new(self.secret, value.encode(), hashlib.sha256).digest())}"
