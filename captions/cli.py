@@ -1,13 +1,14 @@
 """Multilingual captions with AssemblyAI.
 
-    python3 -m captions VIDEO --mode japanese+english [--font "Noto Sans JP"] [--editor finalcut]
+    python3 -m captions VIDEO --mode japanese+english [--font "Noto Sans JP"] [--editor finalcut] [--style social]
     python3 -m captions modes                  list languages and presets
     python3 -m captions fonts --mode hinglish  fonts to choose from (defaults, fonts/ folder, open-source picks)
     python3 -m captions plan VIDEO --mode ...  for the AssemblyAI MCP server: upload-sized audio + submit params
     python3 -m captions demo                   rebuild demo.html from examples/
 
 A mode is a language ("japanese") or a pair ("japanese+english": Japanese on top, English underneath),
-plus "hinglish" and "hinglish-roman". Writes, next to the video (or in --out), for each mode:
+plus "hinglish" and "hinglish-roman". Line length, reading speed and placement follow the video's shape (16:9,
+9:16, 1:1…; see profiles.py). Writes, next to the video (or in --out), for each mode:
 
     <name>.<mode>.srt / .vtt / .ass / .json    captions (any player or editor) / styled burn-in / cues
     <name>.<mode>.fcpxmld                      --editor finalcut
@@ -17,7 +18,7 @@ plus "hinglish" and "hinglish-roman". Writes, next to the video (or in --out), f
     <name>.preview.html                        the video with every mode's captions, in a browser
 
 Exit code 3: a translation or romanization is waiting for an agent in <name>.<mode>.llm-request.json
-(no API key for LLM Gateway). Answer it in <name>.<mode>.llm-answers.json and run the same command again.
+(no API key for LLM Gateway; key words for --style social too). Answer it in <name>.<mode>.llm-answers.json and run the same command again.
 """
 import argparse
 import glob
@@ -28,7 +29,7 @@ import shutil
 import subprocess
 import sys
 
-from . import assemblyai, exports, fonts, languages, lines, modes, writers
+from . import assemblyai, exports, fonts, languages, lines, modes, profiles, writers
 from .assemblyai import read_json
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -131,10 +132,17 @@ def main(argv=None):
     p.add_argument("--overlay", action="store_true", help="render styled captions with alpha into each project (libass)")
     p.add_argument("--burn", action="store_true", help="also burn captions into a copy of the video (libass)")
     p.add_argument("--no-karaoke", action="store_true", help="burn whole lines instead of word-by-word")
+    p.add_argument("--style", choices=tuple(writers.STYLES), default="default",
+                   help="look of the overlay and burn-in: default, high-contrast (yellow on black, no motion) or "
+                        "social (bold, key words highlighted: one more LLM task)")
+    p.add_argument("--speaker-names", choices=writers.SPEAKER_NAMES, default="never",
+                   help="show who's speaking on screen (and in the .vtt): never, on each change, or always")
     p.add_argument("--glue", action="append", default=[], metavar="PHRASE", help='keep a phrase on one line (repeatable)')
     p.add_argument("--keyterm", action="append", default=[], metavar="TERM",
                    help="a name or term to transcribe exactly, e.g. AssemblyAI (repeatable; also kept on one line)")
-    p.add_argument("--max-width", type=int, default=32, help="line length in columns; CJK counts 2 (default 32)")
+    p.add_argument("--aspect", help="profile for this shape instead of the video's: 16:9, 9:16, 1:1, vertical…")
+    p.add_argument("--max-width", type=int, help="line length in columns; CJK counts 2 (default: from the video's "
+                                                 "shape, 42 for 16:9, 22 for 9:16)")
     p.add_argument("--out", help="output folder (default: next to the video)")
     p.add_argument("--llm", choices=("auto", "gateway", "agent"), default="auto",
                    help="who translates/romanizes: LLM Gateway (needs a key) or the agent (default: gateway if a key is set)")
@@ -159,6 +167,13 @@ def main(argv=None):
     if a.llm == "gateway" and not key:
         raise SystemExit("--llm gateway needs ASSEMBLYAI_API_KEY")
     size = video_size(a.video) if not is_url else (1920, 1080)
+    try:
+        profile = profiles.parse(a.aspect) if a.aspect else profiles.for_size(*size)
+    except ValueError as e:
+        raise SystemExit(str(e))
+    if a.max_width:
+        profile = profile._replace(width=a.max_width)
+    print(f"Profile: {profiles.describe(profile)}")
 
     transcripts, tracks, faces, waiting = {}, [], {}, []
     for mode in chosen:
@@ -176,7 +191,8 @@ def main(argv=None):
         base = os.path.join(out, f"{stem}.{mode.name}")
         llm = modes.Llm(key, a.llm_model, base, prefer_agent=a.llm == "agent")
         try:
-            cue_list = modes.build(assemblyai.words(transcripts[mode.transcript_key]), mode, llm, glue, a.max_width)
+            cue_list = modes.build(assemblyai.words(transcripts[mode.transcript_key]), mode, llm, glue, profile.width,
+                                   profile, key_words=a.style == "social" and not mode.rtl)
         except modes.NeedsAgent as need:
             waiting.append(need)
             continue
@@ -186,10 +202,11 @@ def main(argv=None):
         font2 = fonts.resolve(a.font2 or (a.font if same else None), mode.script2 or mode.script)
         fontsdir = font.dir or font2.dir
         writers.srt(cue_list, base + ".srt")
-        writers.vtt(cue_list, base + ".vtt")
-        # right-to-left scripts reveal whole lines: splitting a line into per-word runs breaks Arabic letter joining
+        writers.vtt(cue_list, base + ".vtt", a.speaker_names)
+        # right-to-left scripts reveal whole lines and get no key words: splitting a line into per-word runs breaks
+        # Arabic letter joining
         writers.ass(cue_list, base + ".ass", size, not a.no_karaoke and not mode.rtl,
-                    fonts.for_libass(font).family, fonts.for_libass(font2).family)
+                    fonts.for_libass(font).family, fonts.for_libass(font2).family, a.style, profile, a.speaker_names)
         writers.cues_json(cue_list, base + ".json", mode.name, mode.label)
         for f in (font, font2):
             if f.path:

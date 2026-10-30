@@ -93,9 +93,50 @@ Next to the video, for each mode:
 | `--keyterm` | A name or product to transcribe exactly, e.g. `--keyterm AssemblyAI`. Repeatable |
 | `--transcript` | Use an existing transcript (API or MCP) instead of transcribing |
 | `--llm agent` | Let your agent do the translation instead of LLM Gateway (see below) |
-| `--glue`, `--max-width` | Keep a phrase on one line; line length in columns (Chinese, Japanese and Korean count double) |
+| `--style` | Look of the overlay and burn-in: `default`, `high-contrast` or `social` (see [Styles](#styles)) |
+| `--speaker-names` | `never` (default), `change` or `always`: who's speaking, from the transcript, coloured per speaker |
+| `--aspect` | Use the profile for another shape than the video's, e.g. `9:16` for a URL or a crop you'll make later |
+| `--glue`, `--max-width` | Keep a phrase on one line; line length in columns (Chinese, Japanese and Korean count double; default from the video's shape) |
 
 The transcript is cached as `talk.<language>.transcript.json`, so adding modes later doesn't transcribe again.
+
+## Vertical and horizontal video
+
+Captions follow the video's shape (read with `ffprobe`). One line shows at a time; a dual mode's translation is the
+second line.
+
+| | 16:9 | 9:16 |
+|---|---|---|
+| Line length | 42 columns | 22 columns |
+| Reading speed | up to 17 characters a second | up to 15 |
+| On screen | 1–7 s per caption | 0.8–5 s |
+| Placement | 8% up from the bottom | 22% up, clear of the app's buttons, text sized to the width |
+
+Shapes in between (1:1, 4:5) get values in between. A caption stays up long enough to read when the silence after
+it allows, a pause of a second or more leaves the screen blank, and slow speech is split so no caption overstays.
+`--max-width` still sets the line length. The profiles and timing rules are adapted from
+[Overtone](https://github.com/lonthq/overtone-captions) (MIT).
+
+## Styles
+
+`--style` sets the look of the `.ass` file, the `--overlay` and `--burn`:
+
+| | |
+|---|---|
+| `default` | White on a dark box; each word turns from grey to white as it's spoken |
+| `high-contrast` | Yellow on solid black (17:1), bigger and bold, whole lines with no motion; nothing depends on colour |
+| `social` | Heavy white type with an outline, upcoming words faint, up to two key words per line in dark type on yellow |
+
+`social` picks key words with one more LLM Gateway request (or, with `--llm agent`, in the same
+`talk.<mode>.llm-request.json` as any translation). `--speaker-names change` writes the speaker's name above the
+line when the speaker changes (`always`: on every line), coloured per speaker, and as `<v Speaker A>` in the `.vtt`.
+Names come from the transcript's speaker labels (A, B…, or real names from speaker identification).
+
+| | |
+|---|---|
+| <img src="docs/gallery/styles/default.png" alt="default style, 16:9" width="420"> | <img src="docs/gallery/styles/default-vertical.png" alt="default style, 9:16" width="140"> |
+| <img src="docs/gallery/styles/high-contrast.png" alt="high-contrast style, 16:9" width="420"> | <img src="docs/gallery/styles/high-contrast-vertical.png" alt="high-contrast style, 9:16" width="140"> |
+| <img src="docs/gallery/styles/social.png" alt="social style, 16:9" width="420"> | <img src="docs/gallery/styles/social-vertical.png" alt="social style, 9:16" width="140"> |
 
 ## Fonts
 
@@ -123,12 +164,14 @@ agent answers in `talk.<mode>.llm-answers.json`, and the same command finishes t
 
 1. **Transcribe** with `universal-3-5-pro` (falling back to `universal-2` for languages outside it). A pair with
    English, like `japanese+english`, uses code-switching (`language_codes: ["ja", "en"]`).
-2. **Break lines** at speaker changes, pauses and sentence ends, then into the fewest, most even lines that fit.
+2. **Break lines** at speaker changes, pauses and sentence ends, then into the fewest, most even lines that fit the
+   video's profile.
    Lines don't end on "the", "का" or "de", Japanese lines don't start on a particle, and `--glue`/`--keyterm`
    phrases stay together.
 3. **Romanize** (`hinglish-roman`) word for word, so every word keeps its timing, and **translate** each line on
    its own, so the second line changes in step with the first.
-4. **Write** captions, editor projects, the overlay and the preview.
+4. **Time** each line to the profile's reading speed and duration limits, and **write** captions, editor projects,
+   the overlay and the preview.
 
 ## Tests
 
@@ -145,10 +188,11 @@ Final Cut is installed. CI runs the suite on every push.
 captions/
   languages.py   languages, modes ("japanese+english"), popular commands
   assemblyai.py  upload, transcribe, LLM Gateway, MCP transcripts
-  lines.py       line breaking for Latin, Cyrillic, Devanagari, Arabic, Hebrew, Chinese, Japanese, Korean
-  modes.py       romanizing, translating, the agent hand-off
+  lines.py       line breaking for Latin, Cyrillic, Devanagari, Arabic, Hebrew, Chinese, Japanese, Korean; timing
+  profiles.py    line length, reading speed and placement for 16:9, 9:16 and in between
+  modes.py       romanizing, translating, key words, the agent hand-off
   fonts.py       font files, system defaults, the font report
-  writers.py     SRT, VTT, ASS, burn-in
+  writers.py     SRT, VTT, ASS (styles, speaker names), burn-in
   exports.py     Final Cut Pro, DaVinci Resolve, Premiere Pro, the overlay
   player.html    preview and demo player
   cli.py         python3 -m captions

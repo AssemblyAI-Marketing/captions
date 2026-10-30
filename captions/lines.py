@@ -4,7 +4,11 @@ Works for Latin, Cyrillic, Devanagari, Arabic, Hebrew, Chinese, Japanese and Kor
 Korean characters count as two columns; Chinese and Japanese are joined without spaces, so a 32-column line holds
 about 16 characters.
 
-    cues = lines.cues(words, glue=lines.glue_pairs(["Voice Agent"]))
+    cues = lines.cues(words, glue=lines.glue_pairs(["Voice Agent"]), profile=profiles.HORIZONTAL)
+
+With a profile (profiles.py), each caption stays up long enough to read at its characters-a-second limit and for
+its minimum duration, as long as the silence after it allows, never longer than its maximum, and a longer pause
+leaves the screen blank. The timing rules are adapted from Overtone (lonthq), MIT.
 """
 
 ENDS = tuple(".?!。？！।؟")         # sentence ends, including Chinese/Japanese, Devanagari and Arabic
@@ -19,6 +23,9 @@ DANGLERS = {
     "el", "la", "los", "las", "un", "una", "de", "del", "y", "en", "con", "por", "para",
     "le", "les", "des", "du", "et", "au", "der", "die", "das", "und", "mit", "o", "os", "e", "il", "di",
 }
+PAUSE = 1.0          # a silence this long (s) shows as a blank screen…
+BLANK = 0.4          # …for at least this long
+MAX_HOLD = 1.5       # most a caption stays up after its last word, to be read
 # a line shouldn't start on these: Japanese particles and closing punctuation
 LEADERS = {"は", "が", "を", "に", "で", "と", "の", "も", "へ", "や", "、", "。", "，", "！", "？", "」", "』", "）"}
 
@@ -80,8 +87,8 @@ def segments(words, max_gap=0.45):
     return out
 
 
-def split_balanced(seg, max_width=32, glue=frozenset()):
-    """Fewest, most even lines for one segment (small DP over break points)."""
+def split_balanced(seg, max_width=32, glue=frozenset(), max_duration=None):
+    """Fewest, most even lines for one segment (small DP over break points), none spoken over max_duration s."""
     n = len(seg)
     # prefix sums of word widths and of the spaces between them, so a line's width is O(1)
     pw, ps = [0], [0]
@@ -101,6 +108,8 @@ def split_balanced(seg, max_width=32, glue=frozenset()):
                 for i in range(j):
                     L = text_len(i, j)
                     if cost[i][m - 1] == INF or L > max_width + 3:
+                        continue
+                    if max_duration and j - i > 1 and seg[j - 1]["end"] - seg[i]["start"] > max_duration:
                         continue
                     c = (L - target) ** 2
                     if j - i == 1 and n > 1 and L < 8:
@@ -127,14 +136,28 @@ def split_balanced(seg, max_width=32, glue=frozenset()):
     return [seg]
 
 
-def cues(words, glue=frozenset(), max_width=32, lead=0.05, hold=0.6):
-    """[{start, end, text, words}]: each line shows from just before its first word until the next line."""
-    lines = [l for s in segments(words) for l in split_balanced(s, max_width, glue)]
-    out = []
+def cues(words, glue=frozenset(), max_width=32, lead=0.05, hold=0.6, profile=None):
+    """[{start, end, text, words}]: each line shows from just before its first word until the next line.
+
+    profile (profiles.Profile) adds the reading rules: held into the silence after it until it's readable at
+    profile.cps and up for profile.min_duration (at most MAX_HOLD past its last word), cut at profile.max_duration,
+    and a pause of PAUSE or more stays blank for at least BLANK. Starts and word timings never move.
+    """
+    max_duration = profile.max_duration if profile else None
+    lines = [l for s in segments(words) for l in split_balanced(s, max_width, glue, max_duration)]
+    out, prev_end = [], 0
     for i, line in enumerate(lines):
-        end = line[-1]["end"] + hold
+        text = join(line)
+        start = max(line[0]["start"] - lead, prev_end, 0)
+        last = line[-1]["end"]
+        end = last + hold
+        if profile:
+            needed = max(profile.min_duration, width(text) / profile.cps)
+            end = min(max(end, start + needed), last + MAX_HOLD, max(start + profile.max_duration, last))
         if i + 1 < len(lines):
-            end = min(end, lines[i + 1][0]["start"] - lead)
-        out.append({"start": round(max(line[0]["start"] - lead, 0), 3), "end": round(end, 3),
-                    "text": join(line), "words": line})
+            nxt = lines[i + 1][0]["start"]
+            end = min(end, nxt - (BLANK if nxt - last >= PAUSE else lead))
+        end = max(end, start + 0.001)
+        prev_end = end
+        out.append({"start": round(start, 3), "end": round(end, 3), "text": text, "words": line})
     return out

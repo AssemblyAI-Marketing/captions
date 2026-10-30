@@ -25,7 +25,7 @@ For a dual mode whose second line is a different script (`japanese+english`), as
 
 ## 3. Ask which editor
 
-AskUserQuestion, multiSelect: Final Cut Pro (`finalcut`), DaVinci Resolve (`resolve`), Adobe Premiere Pro (`premiere`), or just caption files. If `ffmpeg -filters | grep libass` lists it, also offer the styled overlay (`--overlay`, word-by-word captions with alpha on the track above the video) and a burned-in copy (`--burn`).
+AskUserQuestion, multiSelect: Final Cut Pro (`finalcut`), DaVinci Resolve (`resolve`), Adobe Premiere Pro (`premiere`), or just caption files. If `ffmpeg -filters | grep libass` lists it, also offer the styled overlay (`--overlay`, word-by-word captions with alpha on the track above the video) and a burned-in copy (`--burn`). If they pick either, ask for the style: `default` (white on a dark box, word by word), `high-contrast` (yellow on black, no motion, for accessibility) or `social` (bold, key words highlighted; good for vertical clips). If more than one person speaks, offer speaker names on screen (`--speaker-names change`). Line length, timing and placement follow the video's shape on their own (vertical video gets short lines set higher up); don't ask.
 
 ## 4. Transcribe
 
@@ -44,12 +44,12 @@ AskUserQuestion, multiSelect: Final Cut Pro (`finalcut`), DaVinci Resolve (`reso
 ## 5. Render
 
 ```
-python3 -m captions VIDEO --mode <mode> --font "<font>" [--font2 "<font>"] [--editor finalcut --editor resolve --editor premiere] [--overlay] [--burn] [--transcript <name>.mcp-transcript.json] [--llm agent]
+python3 -m captions VIDEO --mode <mode> --font "<font>" [--font2 "<font>"] [--editor finalcut --editor resolve --editor premiere] [--overlay] [--burn] [--style default|high-contrast|social] [--speaker-names never|change|always] [--transcript <name>.mcp-transcript.json] [--llm agent]
 ```
 
 Use `--llm agent` when there is no API key.
 
-**Exit code 3** means a translation or romanization is waiting for you. For each `<name>.<mode>.llm-request.json` it names: do the task yourself, following its `instruction` exactly (translate line by line so captions stay in sync; romanize keeps the same number of words per line), write `<name>.<mode>.llm-answers.json` as `{"<kind>": [...]}` with one answer per item, in order, and run the same command again.
+**Exit code 3** means a translation, romanization or key-word pick (`--style social`) is waiting for you. For each `<name>.<mode>.llm-request.json` it names: do the task yourself, following its `instruction` exactly (translate line by line so captions stay in sync; romanize keeps the same number of words per line; keywords: at most two words per line, copied exactly from it, often none), write `<name>.<mode>.llm-answers.json` as `{"<kind>": [...]}` with one answer per item, in order, and run the same command again.
 
 ## 6. Hand over
 

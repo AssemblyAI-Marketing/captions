@@ -17,7 +17,7 @@ import xml.etree.ElementTree as ET
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-from captions import assemblyai, cli, exports, fonts, languages, lines, modes, writers  # noqa: E402
+from captions import assemblyai, cli, exports, fonts, languages, lines, modes, profiles, writers  # noqa: E402
 
 EX = os.path.join(ROOT, "examples", "transcripts")
 HAS_FFMPEG = bool(shutil.which("ffmpeg") and shutil.which("ffprobe"))
@@ -37,8 +37,20 @@ def words(name):
     return assemblyai.words(json.loads(read(os.path.join(EX, name))))
 
 
-def clip(path, rate="30000/1001", seconds=12):
-    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", f"color=c=gray:s=1920x1080:r={rate}:d={seconds}",
+def timed(text, speakers="A", step=0.3, gap_after=None):
+    """Words spoken one every step seconds; gap_after={index: seconds} adds a pause after a word; speakers cycles
+    per sentence."""
+    out, t, sentence = [], 0.0, 0
+    for i, tok in enumerate(text.split()):
+        out.append({"text": tok, "start": round(t, 3), "end": round(t + step * 0.8, 3),
+                    "speaker": speakers[sentence % len(speakers)]})
+        t += step + (gap_after or {}).get(i, 0)
+        sentence += tok.endswith((".", "?", "!"))
+    return out
+
+
+def clip(path, rate="30000/1001", seconds=12, size="1920x1080"):
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", f"color=c=gray:s={size}:r={rate}:d={seconds}",
                     "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo", "-t", str(seconds), "-c:v", "libx264",
                     "-c:a", "aac", "-shortest", path], check=True)
     return path
@@ -205,6 +217,171 @@ class Writers(unittest.TestCase):
         self.assertIn("\\N{\\rSub}Los subtítulos", first)
 
 
+class Profiles(unittest.TestCase):
+    def test_landscape_and_vertical(self):
+        self.assertEqual(profiles.for_size(1920, 1080)[1:], profiles.HORIZONTAL[1:])
+        self.assertEqual(profiles.for_size(1080, 1920)[1:], profiles.VERTICAL[1:])
+        self.assertEqual((profiles.HORIZONTAL.width, profiles.HORIZONTAL.cps), (42, 17.0))
+        self.assertEqual((profiles.VERTICAL.width, profiles.VERTICAL.cps), (22, 15.0))
+
+    def test_in_between_and_beyond(self):
+        square = profiles.for_size(1080, 1080)
+        self.assertEqual(square.name, "1:1")
+        self.assertTrue(profiles.VERTICAL.width < square.width < profiles.HORIZONTAL.width)
+        self.assertTrue(profiles.VERTICAL.margin > square.margin > profiles.HORIZONTAL.margin)
+        self.assertEqual(profiles.for_size(2560, 1080).width, 42)          # wider than 16:9 stays at 16:9
+        self.assertEqual(profiles.for_size(1918, 1080).name, "16:9")       # snaps within 2%
+
+    def test_parse(self):
+        self.assertEqual(profiles.parse("vertical"), profiles.VERTICAL)
+        self.assertEqual(profiles.parse("9x16")[1:], profiles.VERTICAL[1:])
+        self.assertEqual(profiles.parse("4:5").name, "4:5")
+        for bad in ("tall", "0:9", "16"):
+            with self.assertRaises(ValueError):
+                profiles.parse(bad)
+
+    def test_vertical_lines_are_short(self):
+        for name in ("english.json", "mandarin+english.json"):
+            for c in lines.cues(words(name), max_width=22, profile=profiles.VERTICAL):
+                self.assertLessEqual(lines.width(c["text"]), 25, c["text"])
+
+
+class Timing(unittest.TestCase):
+    P = profiles.HORIZONTAL
+
+    def test_held_for_reading_time(self):
+        # a fast 38-character line, then a long silence: it stays up long enough to read at 17 characters a second
+        ws = timed("Reading speed matters for every viewer.", step=0.2) + timed("Next.", step=0.3)
+        for w in ws[-1:]:
+            w["start"], w["end"] = 6.0, 6.3
+        c = lines.cues(ws, max_width=42, profile=self.P)[0]
+        self.assertGreaterEqual(c["end"] - c["start"], lines.width(c["text"]) / self.P.cps - 1e-3)
+
+    def test_min_duration(self):
+        ws = timed("Hi.") + [{"text": "Later.", "start": 5.0, "end": 5.4, "speaker": "A"}]
+        c = lines.cues(ws, profile=self.P)[0]
+        self.assertGreaterEqual(c["end"] - c["start"], self.P.min_duration - 1e-3)
+
+    def test_hold_never_covers_the_next_line_or_a_pause(self):
+        ws = timed("One two three four. Five six seven eight.", gap_after={3: 1.2})
+        a, b = lines.cues(ws, max_width=42, profile=self.P)
+        self.assertGreaterEqual(b["start"] - a["end"], lines.BLANK - 1e-3)       # the pause shows as a blank screen
+        ws = timed("A quick line that keeps going. And the next one right away.", step=0.1)
+        cs = lines.cues(ws, max_width=42, profile=self.P)
+        for x, y in zip(cs, cs[1:]):
+            self.assertLessEqual(x["end"], y["start"] + 1e-9)
+
+    def test_max_duration_splits_slow_speech(self):
+        ws = timed("so we we waited and waited and waited", step=1.2)
+        cs = lines.cues(ws, max_width=42, profile=self.P)
+        self.assertGreater(len(cs), 1)
+        for c in cs:
+            self.assertLessEqual(c["end"] - c["start"], self.P.max_duration + 1e-9, c["text"])
+
+    def test_real_transcripts_follow_the_rules(self):
+        for name in ("english.json", "hindi.json", "hinglish.json", "mandarin+english.json"):
+            cs = lines.cues(words(name), max_width=42, profile=self.P)
+            for c in cs:
+                self.assertLessEqual(c["end"] - c["start"], self.P.max_duration + 1e-9)
+                self.assertLess(c["start"], c["end"])
+            for a, b in zip(cs, cs[1:]):
+                self.assertLessEqual(a["end"], b["start"] + 1e-9)
+
+
+class Styles(unittest.TestCase):
+    def setUp(self):
+        self.d = tempfile.mkdtemp()
+        self.cues = lines.cues(timed("We shipped Universal-3 Pro today. It is fast. Thanks for having me.", speakers="AB"),
+                               max_width=42, profile=profiles.HORIZONTAL)
+
+    def tearDown(self):
+        shutil.rmtree(self.d)
+
+    def ass(self, **kw):
+        p = os.path.join(self.d, "a.ass")
+        writers.ass(self.cues, p, kw.pop("size", (1920, 1080)), kw.pop("karaoke", True), "Arial", **kw)
+        return read(p)
+
+    def dialogues(self, ass):
+        return [l for l in ass.splitlines() if l.startswith("Dialogue:")]
+
+    def test_default_unchanged(self):
+        ass = self.ass()
+        self.assertIn("Style: Main,Arial,54,&H00FFFFFF,&H00999999,", ass)
+        self.assertIn("\\k", self.dialogues(ass)[0])
+
+    def test_high_contrast_yellow_on_black_without_motion(self):
+        ass = self.ass(style="high-contrast")
+        self.assertIn(",&H003BEBFF,&H003BEBFF,&H00000000,&H00000000,1,", ass)
+        self.assertNotIn("\\k", "".join(self.dialogues(ass)))
+        self.assertNotIn("\\t(", ass)
+
+    def test_social_highlights_key_words(self):
+        self.cues[0]["words"][2]["key"] = True
+        ass = self.ass(style="social")
+        first = self.dialogues(ass)[0]
+        self.assertIn("\\3c&H0000D4FF", first)
+        self.assertEqual(first.count("\\3c&H0000D4FF"), 1)
+        self.assertIn("Universal-3{\\rMain}", first)
+        self.assertNotIn("\\3c&H0000D4FF", self.ass(style="default"))      # only social draws key words
+
+    def test_vertical_fits_and_sits_higher(self):
+        ass = self.ass(size=(1080, 1920), profile=profiles.VERTICAL, style="social")
+        main = next(l for l in ass.splitlines() if l.startswith("Style: Main,")).split(",")
+        fs, ml, mv = int(main[2]), int(main[19]), int(main[21])
+        self.assertLessEqual(fs * 0.58 * profiles.VERTICAL.width, 1080 - 2 * ml)
+        self.assertEqual(mv, round(1920 * profiles.VERTICAL.margin))
+        self.assertGreater(mv, round(1080 * profiles.HORIZONTAL.margin))
+
+
+class SpeakerNames(unittest.TestCase):
+    def setUp(self):
+        self.cues = lines.cues(timed("Hello there. Hi! How are you? Fine thanks. Great.", speakers="AABBA"),
+                               max_width=42, profile=profiles.HORIZONTAL)
+
+    def test_when(self):
+        self.assertEqual(writers.speaker_labels(self.cues, "never"), [None] * 5)
+        self.assertEqual(writers.speaker_labels(self.cues, "always"),
+                         ["Speaker A", "Speaker A", "Speaker B", "Speaker B", "Speaker A"])
+        self.assertEqual(writers.speaker_labels(self.cues, "change"), ["Speaker A", None, "Speaker B", None, "Speaker A"])
+        one = lines.cues(timed("Just me. Still me."), profile=profiles.HORIZONTAL)
+        self.assertEqual(writers.speaker_labels(one, "change"), [None, None])        # a monologue needs no names
+
+    def test_real_names_kept(self):
+        self.assertEqual(writers.speaker_name("Alice Chen"), "Alice Chen")
+        self.assertEqual(writers.speaker_name("B"), "Speaker B")
+
+    def test_on_screen_coloured_per_speaker(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "a.ass")
+            writers.ass(self.cues, p, speakers="change")
+            ds = [l for l in read(p).splitlines() if l.startswith("Dialogue:")]
+            self.assertIn("{\\rSpeaker\\c" + writers.SPEAKER_COLORS[0] + "}Speaker A\\N{\\rMain}", ds[0])
+            self.assertIn("{\\rSpeaker\\c" + writers.SPEAKER_COLORS[1] + "}Speaker B", ds[2])
+            self.assertNotIn("Speaker", ds[1])
+            writers.vtt(self.cues, os.path.join(d, "a.vtt"), "change")
+            self.assertIn("<v Speaker B>How are you?", read(os.path.join(d, "a.vtt")))
+
+
+class KeyWords(unittest.TestCase):
+    def test_budget_and_one_request_with_the_translation(self):
+        with tempfile.TemporaryDirectory() as d:
+            base = os.path.join(d, "clip.english+spanish")
+            llm = modes.Llm(None, base=base)
+            mode = languages.parse("english+spanish")
+            with self.assertRaises(modes.NeedsAgent):
+                modes.build(words("english.json"), mode, llm, profile=profiles.HORIZONTAL, key_words=True)
+            req = json.loads(read(base + ".llm-request.json"))
+            self.assertEqual(set(req), {"translate", "keywords"})
+            items = req["keywords"]["items"]
+            # three picks for the first line (one over budget, one in another case), none for the rest
+            picks = [[w.strip(".,").upper() for w in items[0].split()[:3]]] + [[] for _ in items[1:]]
+            write(base + ".llm-answers.json", {"translate": ["es"] * len(items), "keywords": picks})
+            cs = modes.build(words("english.json"), mode, llm, profile=profiles.HORIZONTAL, key_words=True)
+            self.assertEqual(sum(bool(w.get("key")) for w in cs[0]["words"]), modes.KEY_WORDS)
+            self.assertFalse(any(w.get("key") for c in cs[1:] for w in c["words"]))
+
+
 class Hardening(unittest.TestCase):
     def test_filter_paths(self):
         self.assertEqual(writers.filter_path("/a b/fonts"), "/a b/fonts")
@@ -322,6 +499,32 @@ class Cli(unittest.TestCase):
             self.assertIn("es 0", read(os.path.join(d, "clip.english+spanish.srt")))
             html = read(os.path.join(d, "clip.preview.html"))
             self.assertIn('"mode": "english+spanish"', html)
+
+    def test_vertical_social_with_speaker_names(self):
+        with tempfile.TemporaryDirectory() as d:
+            video = clip(os.path.join(d, "tall.mp4"), rate="30", size="1080x1920")
+            args = (video, "--transcript", os.path.join(EX, "english.json"), "--mode", "english", "--llm", "agent",
+                    "--style", "social", "--speaker-names", "always", "--out", d)
+            code, out = self.run_cli(*args)
+            self.assertEqual(code, cli.AGENT_EXIT, out)
+            self.assertIn("Profile: 9:16 (vertical): 22-column lines", out)
+            req = json.loads(read(os.path.join(d, "tall.english.llm-request.json")))
+            first = req["keywords"]["items"][0].split()[0]
+            write(os.path.join(d, "tall.english.llm-answers.json"),
+                  {"keywords": [[first]] + [[] for _ in req["keywords"]["items"][1:]]})
+            code, out = self.run_cli(*args)
+            self.assertEqual(code, 0, out)
+            ass = read(os.path.join(d, "tall.english.ass"))
+            self.assertIn("PlayResX: 1080", ass)
+            self.assertIn("}Speaker A\\N", ass)
+            self.assertIn("\\3c&H0000D4FF", ass)
+            cs = json.loads(read(os.path.join(d, "tall.english.json")))["cues"]
+            self.assertTrue(all(lines.width(c["text"]) <= 25 for c in cs))
+
+    def test_bad_aspect_refused(self):
+        code, _ = self.run_cli("https://example.com/a.mp4", "--transcript", os.path.join(EX, "english.json"),
+                               "--aspect", "tall")
+        self.assertNotEqual(code, 0)
 
     def test_url_with_editor_refused(self):
         code, _ = self.run_cli("https://example.com/a.mp4", "--transcript", os.path.join(EX, "english.json"), "--editor", "finalcut")
