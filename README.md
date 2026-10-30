@@ -21,6 +21,19 @@ English, Arabic, Hindi and Hinglish are written samples:
 
 Try it without a key: open [`demo.html`](demo.html) in a browser.
 
+## Live captions
+
+Captions of your own mic, live, with AssemblyAI realtime Speech-to-Text: a transparent overlay for OBS or Streamlabs, an
+always-on-top window to share in Zoom, Meet or Teams, or full screen on a stage display.
+
+```bash
+python3 live/server.py
+```
+
+Open http://localhost:8787. Dev mode uses your `ASSEMBLYAI_API_KEY`, which never reaches the browser. "Sign in with
+AssemblyAI", where each visitor uses their own account, needs a one-time approval from AssemblyAI. Captioning sends
+speech to AssemblyAI while it's on, so tell people and get consent where required. See [live/README.md](live/README.md).
+
 ## In Claude Code
 
 Open this folder in Claude Code and run a command with your video:
@@ -141,6 +154,7 @@ captions/
   cli.py         python3 -m captions
 .claude/         the captions skill and one command per popular mode
 examples/        sample captions; transcripts/ holds sample transcript JSON
+live/            live captions of your mic: page, token server, tests (live/README.md)
 ```
 
 ## Privacy and security
