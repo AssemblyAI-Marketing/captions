@@ -25,3 +25,5 @@ out/
 # your fonts stay yours: nothing in fonts/ is committed except its README
 fonts/*
 !fonts/README.md
+# live/ on Vercel
+.vercel/
