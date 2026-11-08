@@ -151,12 +151,12 @@ No API key on hand? The captions skill can transcribe through the [AssemblyAI MC
 
 1. `python3 -m captions plan talk.mp4 --mode japanese+english` makes an upload-sized audio file (under 4.5 MB) and
    prints the `submit_transcript` parameters.
-2. The agent uploads it with `create_upload_url`, calls `submit_transcript`, polls `get_transcript`, and saves the
-   result as JSON.
+2. The agent uploads it with `create_upload_url`, calls `submit_transcript`, polls `get_transcript` (with
+   `include_words: true` for word timings), and saves the result as JSON.
 3. `python3 -m captions talk.mp4 --mode japanese+english --transcript talk.mcp-transcript.json --llm agent`
 
-The MCP server returns sentence timings rather than word timings, so captions are timed per sentence with the words
-spread across it; an API key gives word-exact timing. Translation and Hinglish romanizing normally use AssemblyAI's
+With `include_words`, the MCP server returns each word's timing, so captions are as word-exact as with an API key
+(an older server without it gives sentence timings, and the words are spread across each sentence). Translation and Hinglish romanizing normally use AssemblyAI's
 LLM Gateway; with `--llm agent` the CLI writes them to `talk.<mode>.llm-request.json` and exits with code 3, the
 agent answers in `talk.<mode>.llm-answers.json`, and the same command finishes the job.
 

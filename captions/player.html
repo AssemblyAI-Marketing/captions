@@ -134,7 +134,9 @@ function render() {
       main.dir = track.rtl ? "rtl" : "auto";
       c.words.forEach((w, n) => {
         const prev = n ? c.words[n - 1].text : "";
-        if (n && !(cjk(prev.slice(-1)) && cjk(w.text[0]))) main.append(" ");
+        const a = prev.slice(-1), b = w.text[0], digit = (c) => /[0-9]/.test(c || "");
+        // same rule as lines.needs_space: no space between CJK words, or between CJK and a digit (2つ)
+        if (n && !((cjk(a) && (cjk(b) || digit(b))) || (digit(a) && cjk(b)))) main.append(" ");
         const s = document.createElement("span"); s.className = "w"; s.textContent = w.text; s.dataset.start = w.start; s.dataset.end = w.end;
         main.append(s);
       });

@@ -35,9 +35,9 @@ AskUserQuestion, multiSelect: Final Cut Pro (`finalcut`), DaVinci Resolve (`reso
 
 1. `python3 -m captions plan VIDEO --mode <mode>` prints `upload_file` (mono MP3 under the 4.5 MB upload limit) and the `submit_transcript` parameters for each mode.
 2. Local file: call `create_upload_url`, run its `curl` with `@<upload_file>`, and take the `upload_url` it prints. Public URL: use it directly. If `create_upload_url` isn't available, ask the user for a public URL or an API key. The link `create_upload_url` returns uploads into the user's account: never print it, echo it back or write it to a file.
-3. Call `submit_transcript` with `audio_url` and that mode's parameters (keep `speaker_labels: true`: the timings come from its utterances).
-4. Poll `get_transcript` every ~3 s until `status` is `completed`. Save its structured result (`transcript_id`, `text`, `speakers` with millisecond `start`/`end`) as JSON next to the video, e.g. `<name>.mcp-transcript.json`.
-5. Tell the user: the MCP server returns utterance timings, not word timings, so captions are timed per utterance with the words spread across it. An API key gives word-exact timing.
+3. Call `submit_transcript` with `audio_url` and that mode's parameters (keep `speaker_labels: true`).
+4. Poll `get_transcript` every ~3 s until `status` is `completed`, then call it once more with `include_words: true` to get each word's timing. Save that structured result (`transcript_id`, `text`, `speakers` with their `words`) as JSON next to the video, e.g. `<name>.mcp-transcript.json`. Captions are then word-exact, as with an API key.
+5. If the server's `get_transcript` has no `include_words` (an older server), save the result anyway: captions are then timed per utterance with the words spread across it, so tell the user the timing is approximate.
 
 **Neither:** ask for an API key (https://www.assemblyai.com/dashboard) or to connect the MCP server.
 
