@@ -155,6 +155,18 @@ class Transcripts(unittest.TestCase):
         self.assertEqual("".join(w["text"] for w in ws[6:]), "大家好，今天我们来看看字幕。")
         self.assertTrue(all(a["end"] <= b["start"] for a, b in zip(ws, ws[1:])))
 
+    def test_mcp_include_words(self):
+        """get_transcript with include_words: word timings nested in each utterance are used as they are."""
+        mcp = {"status": "completed", "speakers": [
+            {"speaker": "A", "text": "今日は 2 つ", "start": 1500, "end": 2000, "words": [
+                {"text": "今日は", "start": 1500, "end": 1720}, {"text": "2", "start": 1720, "end": 1800},
+                {"text": "つ", "start": 1800, "end": 2000}]},
+            {"speaker": "B", "text": "Hi", "start": 2500, "end": 2700, "words": [{"text": "Hi", "start": 2500, "end": 2700}]}]}
+        ws = assemblyai.words(mcp)
+        self.assertEqual([(w["text"], w["start"], w["speaker"]) for w in ws],
+                         [("今日は", 1.5, "A"), ("2", 1.72, "A"), ("つ", 1.8, "A"), ("Hi", 2.5, "B")])
+        self.assertEqual(lines.join(ws[:3]), "今日は2つ")
+
     def test_mcp_without_timings(self):
         with self.assertRaises(SystemExit):
             assemblyai.words({"text": "hi"})

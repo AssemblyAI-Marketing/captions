@@ -50,8 +50,11 @@ def width(text):
 
 
 def needs_space(left, right):
-    """No space between two Chinese words, or before Chinese punctuation."""
-    return not (left and right and is_cjk(left[-1]) and is_cjk(right[0]))
+    """No space between two Chinese or Japanese words, before CJK punctuation, or between CJK and a digit (2つ)."""
+    if not (left and right):
+        return True
+    a, b = left[-1], right[0]
+    return not ((is_cjk(a) and (is_cjk(b) or b.isdigit())) or (a.isdigit() and is_cjk(b)))
 
 
 def join(words):

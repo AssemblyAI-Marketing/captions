@@ -73,14 +73,18 @@ def transcribe(source, key, mode, log=print, keyterms=()):
 def words(transcript):
     """Word list in seconds from a transcript JSON.
 
-    Takes a full AssemblyAI transcript (word timings), or the structured result of the AssemblyAI MCP
-    server's get_transcript, which has per-speaker utterances ("speakers": [{speaker, text, start, end}])
-    but no word timings. Then each utterance's words are spread across its span by character width.
+    Takes a full AssemblyAI transcript, or the structured result of the AssemblyAI MCP server's get_transcript.
+    With include_words=true the MCP returns word timings inside each utterance ("speakers": [{..., "words"}]),
+    or as a top-level "words" list; those are used as they are. Without them there are only utterance spans,
+    and each utterance's words are spread across its span by character width (approximate).
     """
+    as_words = lambda ws, who=None: [{"text": w["text"], "start": w["start"] / 1000, "end": w["end"] / 1000,
+                                      "speaker": w.get("speaker", who)} for w in ws]
     if transcript.get("words"):
-        return [{"text": w["text"], "start": w["start"] / 1000, "end": w["end"] / 1000, "speaker": w.get("speaker")}
-                for w in transcript["words"]]
+        return as_words(transcript["words"])
     utts = transcript.get("speakers") or transcript.get("utterances")
+    if utts and all(u.get("words") for u in utts):
+        return [w for u in utts for w in as_words(u["words"], u.get("speaker"))]
     if not utts:
         if not transcript.get("text") or not transcript.get("audio_duration"):
             raise SystemExit("Transcript has no word or utterance timings. With the MCP server, submit with "
