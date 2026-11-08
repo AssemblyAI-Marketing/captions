@@ -6,6 +6,8 @@ Live captions of your own microphone, with AssemblyAI realtime Speech-to-Text (U
 - **Zoom, Meet, Teams:** an always-on-top caption window you share, or captions on your camera through OBS's virtual camera.
 - **A stage screen:** full screen, big type.
 
+<img src="../docs/live.png" alt="The live captions page: two lines of captions on black, the last words still dim, with settings for language, model, font, size, position, lines, style and background" width="720">
+
 The rest of this repo captions finished videos. This folder is the live version: one page (`index.html`) and one small server (`server.py`), Python standard library only, nothing to install.
 
 ## Run it
