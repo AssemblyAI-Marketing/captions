@@ -100,6 +100,35 @@ Next to the video, for each mode:
 
 The transcript is cached as `talk.<language>.transcript.json`, so adding modes later doesn't transcribe again.
 
+## Rough cut
+
+Recorded a few takes? `/rough-cut` turns them into a first cut before you caption:
+
+```
+/rough-cut ~/Movies/take1.mov ~/Movies/take2.mov
+```
+
+<img src="docs/rough-cut.svg" alt="Rough cut: two takes become sentences; warm-up chatter and an earlier take of a line are dropped, the last take of each line is kept, and the kept sentences are joined in the pauses into one cut for Final Cut Pro, DaVinci Resolve, Premiere Pro and an MP4, with a transcript on the cut's clock for captions" width="960">
+
+AssemblyAI transcribes each take with word timings. LLM Gateway, or your agent, reads the sentences and keeps the
+last complete take of each line, dropping false starts and "All right, okay" warm-ups. Every cut moves to the quietest
+10 ms near the sentence edge and never into a dropped word. Where you ran two sentences together with no pause, the
+cut is marked "Check this cut" in Final Cut and Resolve so you can find it in one click.
+
+```bash
+python3 -m captions cut take1.mov take2.mov --editor all --render
+```
+
+| File | |
+|---|---|
+| `take1.cut.fcpxmld`, `.resolve.fcpxml`, `.premiere.xml` | The cut as clips on a timeline, linked to your original takes: trim any of them in your editor |
+| `take1.cut.mp4` | `--render`: the cut as H.264, with 10 ms fades at each cut so there are no clicks |
+| `take1.cut.json` | What was kept and dropped, and every cut's source and timeline times |
+| `take1.cut.transcript.json` | The kept words on the cut's clock: `python3 -m captions take1.cut.mp4 --transcript take1.cut.transcript.json --mode english` captions the cut without transcribing again |
+
+`--llm agent` hands the decision to Claude Code (no key needed for that step); `--llm none` uses a rougher offline
+rule: a sentence goes when one of the next few opens the same way, and filler-only sentences go.
+
 ## Vertical and horizontal video
 
 Captions follow the video's shape (read with `ffprobe`). One line shows at a time; a dual mode's translation is the
@@ -194,9 +223,10 @@ captions/
   fonts.py       font files, system defaults, the font report
   writers.py     SRT, VTT, ASS (styles, speaker names), burn-in
   exports.py     Final Cut Pro, DaVinci Resolve, Premiere Pro, the overlay
+  roughcut.py    the rough cut: sentences, keep the last take, cut in quiet spots, multi-clip timelines
   player.html    preview and demo player
   cli.py         python3 -m captions
-.claude/         the captions skill and one command per popular mode
+.claude/         the captions and rough-cut skills, one command per popular mode, /rough-cut
 examples/        sample captions; transcripts/ holds sample transcript JSON
 live/            live captions of your mic: page, token server, tests (live/README.md)
 ```
