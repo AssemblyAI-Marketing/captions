@@ -17,7 +17,7 @@ import xml.etree.ElementTree as ET
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-from captions import assemblyai, cli, exports, fonts, languages, lines, modes, profiles, writers  # noqa: E402
+from captions import assemblyai, cli, exports, fonts, languages, lines, modes, profiles, roughcut, writers  # noqa: E402
 
 EX = os.path.join(ROOT, "examples", "transcripts")
 HAS_FFMPEG = bool(shutil.which("ffmpeg") and shutil.which("ffprobe"))
@@ -550,6 +550,155 @@ class Cli(unittest.TestCase):
         self.assertIn("latin:", out)
 
 
+TAKES = "All right. Okay. Welcome to the show. Today we talk about captions. Today we talk about rough cuts. Thanks for watching."
+
+
+def as_transcript(ws):
+    """Seconds → an AssemblyAI-shaped transcript (milliseconds)."""
+    return {"words": [{"text": w["text"], "start": round(w["start"] * 1000), "end": round(w["end"] * 1000),
+                       "speaker": w["speaker"]} for w in ws]}
+
+
+class RoughCut(unittest.TestCase):
+    def sents(self, text=TAKES, step=0.3):
+        return roughcut.sentences([timed(text, step=step)])
+
+    def test_sentences_split_at_ends_pauses_and_clips(self):
+        s = self.sents()
+        self.assertEqual([x["text"] for x in s][:3], ["All right.", "Okay.", "Welcome to the show."])
+        paused = roughcut.sentences([timed("one two three four", gap_after={1: 1.5})])
+        self.assertEqual([x["text"] for x in paused], ["one two", "three four"])
+        two = roughcut.sentences([timed("Hello there"), timed("Second clip")])
+        self.assertEqual([(x["clip"], x["id"]) for x in two], [(0, 0), (1, 1)])
+
+    def test_heuristic_keeps_the_last_take_and_drops_filler(self):
+        s = self.sents()
+        keep = roughcut.heuristic(s)
+        self.assertEqual([x["text"] for x, k in zip(s, keep) if k],
+                         ["Welcome to the show.", "Today we talk about rough cuts.", "Thanks for watching."])
+
+    def test_quietest_stays_in_bounds(self):
+        env = [100.0] * 300
+        env[150] = 1.0                      # 1.50 s is silent
+        env[90] = 0.0                       # 0.90 s is quieter, but out of reach
+        self.assertEqual(roughcut.quietest(env, 1.45, 0.0, 3.0), 1.5)
+        self.assertTrue(1.33 <= roughcut.quietest(env, 1.45, 0.0, 1.48) <= 1.48)
+        self.assertEqual(roughcut.quietest([], 2.0, 0.0, 1.0), 1.0)
+
+    def test_segments_merge_neighbours_and_avoid_dropped_words(self):
+        s = self.sents()
+        keep = roughcut.heuristic(s)
+        segs = roughcut.segments(s, keep, [[]])
+        self.assertEqual([lines.join(x["words"]) for x in segs],     # the dropped first take splits the cut once
+                         ["Welcome to the show.", "Today we talk about rough cuts. Thanks for watching."])
+        dropped = [w for x, k in zip(s, keep) if not k for w in x["words"]]
+        for seg in segs:
+            self.assertLessEqual(seg["in"], seg["words"][0]["start"])
+            self.assertGreaterEqual(seg["out"], seg["words"][-1]["end"])
+            for w in dropped:
+                self.assertFalse(seg["in"] < w["end"] and w["start"] < seg["out"], (seg["in"], seg["out"], w))
+        retimed = roughcut.timeline(segs)
+        self.assertEqual(retimed["words"][0]["text"], "Welcome")
+        self.assertLess(retimed["words"][0]["start"], 200)
+        ends = [(w["start"], w["end"]) for w in retimed["words"]]
+        self.assertEqual(ends, sorted(ends))
+        self.assertAlmostEqual(segs[-1]["end"], sum(x["out"] - x["in"] for x in segs), places=3)
+
+    def test_cuts_without_a_pause_are_flagged(self):
+        s = self.sents()
+        keep = roughcut.heuristic(s)
+        self.assertEqual([x["check"] for x in roughcut.segments(s, keep, [[0.0] * 3000])], [[], []])
+        self.assertEqual([x["check"] for x in roughcut.segments(s, keep, [[500.0] * 3000])], [["in", "out"]] * 2)
+
+    def test_decide_uses_the_agent(self):
+        s = self.sents()
+        with tempfile.TemporaryDirectory() as d:
+            llm = modes.Llm(None, base=os.path.join(d, "x.cut"))
+            with self.assertRaises(modes.NeedsAgent):
+                roughcut.decide(s, llm)
+            req = json.loads(read(os.path.join(d, "x.cut.llm-request.json")))["cut"]
+            self.assertEqual(len(req["items"]), len(s))
+            self.assertIn("LAST complete take", req["instruction"])
+            write(os.path.join(d, "x.cut.llm-answers.json"), {"cut": [i % 2 == 0 for i in range(len(s))]})
+            self.assertEqual(roughcut.decide(s, llm), [i % 2 == 0 for i in range(len(s))])
+            write(os.path.join(d, "x.cut.llm-answers.json"), {"cut": ["yes"] * len(s)})
+            with self.assertRaises(SystemExit):
+                roughcut.decide(s, llm)
+
+
+@unittest.skipUnless(HAS_FFMPEG, "needs ffmpeg/ffprobe")
+class RoughCutCli(unittest.TestCase):
+    run_cli = Cli.run_cli
+
+    def test_two_takes_to_every_editor_and_an_mp4(self):
+        with tempfile.TemporaryDirectory() as d:
+            a = clip(os.path.join(d, "take 1.mp4"), rate="30000/1001", seconds=10)
+            b = clip(os.path.join(d, "take2.mp4"), rate="30000/1001", seconds=4)
+            write(os.path.join(d, "a.json"), as_transcript(timed(TAKES, step=0.3)))
+            write(os.path.join(d, "b.json"), as_transcript(timed("And one more thing.", step=0.3)))
+            code, out = self.run_cli("cut", a, b, "--transcript", os.path.join(d, "a.json"), "--transcript",
+                                     os.path.join(d, "b.json"), "--llm", "none", "--editor", "all", "--render", "--out", d)
+            self.assertEqual(code, 0, out)
+            self.assertIn("Today we talk about captions.", out)          # listed as dropped
+            summary = json.loads(read(os.path.join(d, "take-1.cut.json")))
+            self.assertEqual([s["clip"] for s in summary["segments"]], [0, 0, 1])
+            self.assertLess(summary["duration"], summary["source_duration"])
+            fcp = os.path.join(d, "take-1.cut.fcpxmld", "Info.fcpxml")
+            root = ET.parse(fcp).getroot()
+            self.assertEqual(len(root.findall(".//spine/asset-clip")), 3)
+            self.assertEqual(len(root.findall(".//resources/asset")), 2)
+            self.assertIn("take%201.mp4", root.find(".//media-rep").get("src"))
+            exports.validate_fcpxml(fcp, "1.11")
+            exports.validate_fcpxml(os.path.join(d, "take-1.cut.resolve.fcpxml"), "1.10")
+            prem = ET.parse(os.path.join(d, "take-1.cut.premiere.xml")).getroot()
+            items = prem.findall("./sequence/media/video/track/clipitem")
+            self.assertEqual(len(items), 3)
+            self.assertEqual(len(prem.findall(".//file/pathurl")), 2)     # each file defined once, then referenced
+            starts = [int(i.find("start").text) for i in items]
+            ends = [int(i.find("end").text) for i in items]
+            self.assertEqual(starts[1:], ends[:-1])                       # back to back, no gaps
+            mp4 = exports.probe(os.path.join(d, "take-1.cut.mp4"))
+            self.assertAlmostEqual(mp4["duration"], summary["duration"], delta=0.15)
+            retimed = json.loads(read(os.path.join(d, "take-1.cut.transcript.json")))
+            self.assertEqual(retimed["words"][-1]["text"], "thing.")
+            self.assertLessEqual(retimed["words"][-1]["end"] / 1000, summary["duration"])
+
+    def test_render_with_a_silent_take(self):
+        with tempfile.TemporaryDirectory() as d:
+            a = clip(os.path.join(d, "a.mp4"), seconds=4)
+            b = os.path.join(d, "b.mp4")
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=gray:s=1920x1080:r=30000/1001:d=3",
+                            "-c:v", "libx264", b], check=True)
+            write(os.path.join(d, "a.json"), as_transcript(timed("Hello there.")))
+            write(os.path.join(d, "b.json"), as_transcript(timed("No sound here.")))
+            code, out = self.run_cli("cut", a, b, "--transcript", os.path.join(d, "a.json"), "--transcript",
+                                     os.path.join(d, "b.json"), "--llm", "none", "--render", "--out", d)
+            self.assertEqual(code, 0, out)
+            self.assertTrue(exports.probe(os.path.join(d, "a.cut.mp4"))["audio"])
+
+    def test_agent_picks_the_takes(self):
+        with tempfile.TemporaryDirectory() as d:
+            v = clip(os.path.join(d, "talk.mp4"), rate="25", seconds=10)
+            write(os.path.join(d, "t.json"), as_transcript(timed(TAKES, step=0.3)))
+            args = ("cut", v, "--transcript", os.path.join(d, "t.json"), "--llm", "agent", "--editor", "finalcut", "--out", d)
+            code, out = self.run_cli(*args)
+            self.assertEqual(code, cli.AGENT_EXIT, out)
+            items = json.loads(read(os.path.join(d, "talk.cut.llm-request.json")))["cut"]["items"]
+            write(os.path.join(d, "talk.cut.llm-answers.json"), {"cut": [not it.split("] ", 1)[1].startswith(("All", "Okay"))
+                                                                        for it in items]})
+            code, out = self.run_cli(*args)
+            self.assertEqual(code, 0, out)
+            self.assertEqual(len(json.loads(read(os.path.join(d, "talk.cut.json")))["dropped"]), 2)
+
+    def test_refuses_mismatched_transcripts_and_urls(self):
+        code, _ = self.run_cli("cut", "https://example.com/a.mp4", "--transcript", "x.json")
+        self.assertNotEqual(code, 0)
+        with tempfile.TemporaryDirectory() as d:
+            v = clip(os.path.join(d, "v.mp4"), seconds=2)
+            code, _ = self.run_cli("cut", v, v, "--transcript", "x.json")
+            self.assertNotEqual(code, 0)
+
+
 class Commands(unittest.TestCase):
     def test_every_popular_mode_has_a_command(self):
         d = os.path.join(ROOT, ".claude", "commands")
@@ -559,8 +708,15 @@ class Commands(unittest.TestCase):
             self.assertTrue(text.startswith('---\ndescription: "'), name)
 
     def test_skill_frontmatter(self):
-        text = read(os.path.join(ROOT, ".claude", "skills", "captions", "SKILL.md"))
-        self.assertTrue(text.startswith("---\nname: captions\ndescription: "))
+        for name in ("captions", "rough-cut"):
+            text = read(os.path.join(ROOT, ".claude", "skills", name, "SKILL.md"))
+            self.assertTrue(text.startswith(f"---\nname: {name}\ndescription: "), name)
+
+    def test_rough_cut_command_is_hand_written(self):
+        text = read(os.path.join(ROOT, ".claude", "commands", "rough-cut.md"))
+        self.assertTrue(text.startswith('---\ndescription: "'))
+        self.assertNotIn("generated by scripts/make_commands.py", text)    # make_commands.py leaves it alone
+        self.assertIn("rough-cut skill", text)
 
 
 if __name__ == "__main__":

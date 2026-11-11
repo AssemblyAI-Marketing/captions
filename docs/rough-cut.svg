@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 470" width="1200" height="470" role="img" aria-labelledby="t d">
+  <title id="t">Rough cut</title>
+  <desc id="d">Two takes are transcribed into sentences. Warm-up chatter and an earlier take of a line are dropped; the last take of each line is kept. The kept sentences become one cut, joined in the pauses, written to Final Cut Pro, DaVinci Resolve and Premiere Pro, an MP4, and a transcript on the cut's clock for captions.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0L10 5L0 10z" fill="#8b8b95"/>
+    </marker>
+    <style>
+      text { font-family: -apple-system, "Segoe UI", system-ui, sans-serif; fill: #e9e9ee; }
+      .t { font-size: 15px; }
+      .s { font-size: 13px; fill: #a6a6b0; }
+      .x { font-size: 15px; fill: #7c7c86; text-decoration: line-through; }
+      .k { font-size: 12px; letter-spacing: .12em; fill: #8b8b95; font-weight: 600; }
+      .m { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 14px; fill: #e9e9ee; }
+      .keep { fill: #1f2a44; stroke: #4c6fd1; stroke-width: 1.5; }
+      .drop { fill: none; stroke: #4a4a52; stroke-width: 1.5; stroke-dasharray: 5 4; }
+      .chip { fill: #26262b; stroke: #3a3a42; stroke-width: 1.5; }
+      .ln { stroke: #8b8b95; stroke-width: 2; fill: none; marker-end: url(#a); }
+      .cut { stroke: #e9e9ee; stroke-width: 2; }
+    </style>
+  </defs>
+  <rect width="1200" height="470" rx="18" fill="#18181b"/>
+
+  <text x="40" y="48" class="k">YOUR TAKES, AS SENTENCES</text>
+
+  <!-- take 1 -->
+  <text x="40" y="96" class="s">Take 1</text>
+  <rect x="110" y="70" width="150" height="44" rx="8" class="drop"/>
+  <text x="124" y="97" class="x">All right. Okay.</text>
+  <text x="124" y="134" class="s">warm-up</text>
+  <rect x="268" y="70" width="190" height="44" rx="8" class="keep"/>
+  <text x="282" y="97" class="t">Welcome to the show.</text>
+  <rect x="466" y="70" width="250" height="44" rx="8" class="drop"/>
+  <text x="480" y="97" class="x">Today we talk about captions.</text>
+  <text x="480" y="134" class="s">earlier take: said again next</text>
+  <rect x="724" y="70" width="262" height="44" rx="8" class="keep"/>
+  <text x="738" y="97" class="t">Today we talk about rough cuts.</text>
+  <rect x="994" y="70" width="166" height="44" rx="8" class="keep"/>
+  <text x="1008" y="97" class="t">Thanks for watching.</text>
+
+  <!-- take 2 -->
+  <text x="40" y="186" class="s">Take 2</text>
+  <rect x="110" y="160" width="176" height="44" rx="8" class="keep"/>
+  <text x="124" y="187" class="t">And one more thing.</text>
+
+  <!-- decision -->
+  <path d="M600 222V262" class="ln"/>
+  <text x="616" y="238" class="s">LLM Gateway or your agent picks the last complete take of each line;</text>
+  <text x="616" y="256" class="s">each cut moves to the quietest 10 ms nearby, never into a dropped word</text>
+
+  <text x="40" y="296" class="k">THE CUT</text>
+  <rect x="110" y="312" width="190" height="44" rx="8" class="keep"/>
+  <text x="124" y="339" class="t">Welcome to the show.</text>
+  <rect x="300" y="312" width="436" height="44" rx="8" class="keep"/>
+  <text x="314" y="339" class="t">Today we talk about rough cuts. Thanks for watching.</text>
+  <rect x="736" y="312" width="176" height="44" rx="8" class="keep"/>
+  <text x="750" y="339" class="t">And one more thing.</text>
+  <path d="M300 304V364M736 304V364" class="cut"/>
+  <text x="926" y="332" class="s">cuts in the pauses; any cut</text>
+  <text x="926" y="350" class="s">with no pause gets a marker</text>
+
+  <!-- outputs -->
+  <path d="M600 372V398" class="ln"/>
+  <rect x="110" y="406" width="150" height="40" rx="8" class="chip"/>
+  <text x="128" y="431" class="t">Final Cut Pro</text>
+  <rect x="270" y="406" width="164" height="40" rx="8" class="chip"/>
+  <text x="288" y="431" class="t">DaVinci Resolve</text>
+  <rect x="444" y="406" width="140" height="40" rx="8" class="chip"/>
+  <text x="462" y="431" class="t">Premiere Pro</text>
+  <rect x="594" y="406" width="76" height="40" rx="8" class="chip"/>
+  <text x="612" y="431" class="t">MP4</text>
+  <rect x="680" y="406" width="480" height="40" rx="8" class="chip"/>
+  <text x="698" y="431" class="m">cut.transcript.json → captions, no re-transcribing</text>
+</svg>

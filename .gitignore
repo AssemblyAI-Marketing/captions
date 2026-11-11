@@ -11,6 +11,7 @@ __pycache__/
 *.wav
 *.m4a
 *.transcript.json
+*.cut.json
 *.preview.html
 *.srt
 *.vtt

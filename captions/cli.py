@@ -5,6 +5,7 @@
     python3 -m captions fonts --mode hinglish  fonts to choose from (defaults, fonts/ folder, open-source picks)
     python3 -m captions plan VIDEO --mode ...  for the AssemblyAI MCP server: upload-sized audio + submit params
     python3 -m captions demo                   rebuild demo.html from examples/
+    python3 -m captions cut TAKE.mov [...]     rough cut: drop retakes and false starts, cut in the pauses (roughcut.py)
 
 A mode is a language ("japanese") or a pair ("japanese+english": Japanese on top, English underneath),
 plus "hinglish" and "hinglish-roman". Line length, reading speed and placement follow the video's shape (16:9,
@@ -104,9 +105,69 @@ def plan(argv):
     }, indent=1, ensure_ascii=False))
 
 
+def cut(argv):
+    """python3 -m captions cut: a rough cut from one or more takes, for an editor (see roughcut.py)."""
+    from . import roughcut
+    p = argparse.ArgumentParser(prog="python3 -m captions cut", description=roughcut.__doc__,
+                                formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("videos", nargs="+", help="the recordings, in order")
+    p.add_argument("--transcript", action="append", default=[],
+                   help="transcript JSON for each video, in the same order (API or MCP with include_words)")
+    p.add_argument("--mode", default="english", help="spoken language(s), as for captions (default: english)")
+    p.add_argument("--keyterm", action="append", default=[], metavar="TERM", help="a name or term to transcribe exactly")
+    p.add_argument("--editor", action="append", choices=exports.EDITORS + ("all",),
+                   help="write the cut for finalcut, resolve or premiere (repeatable, or all)")
+    p.add_argument("--render", action="store_true", help="also render the cut as an MP4")
+    p.add_argument("--name", help="name for the outputs (default: the first video's)")
+    p.add_argument("--out", help="output folder (default: next to the first video)")
+    p.add_argument("--llm", choices=("auto", "gateway", "agent", "none"), default="auto",
+                   help="who picks the takes: LLM Gateway, the agent, or none (an offline rule: later retakes win)")
+    p.add_argument("--llm-model", default=assemblyai.LLM_MODEL, help="LLM Gateway model")
+    a = p.parse_args(argv)
+    for v in a.videos:
+        if not os.path.isfile(v):
+            raise SystemExit(f"{v}: not a local file (the cut needs the media itself)")
+    if a.transcript and len(a.transcript) != len(a.videos):
+        raise SystemExit("give one --transcript per video, in the same order")
+    mode = languages.parse(a.mode)
+    out = a.out or os.path.dirname(os.path.abspath(a.videos[0]))
+    os.makedirs(out, exist_ok=True)
+    stem = a.name or re.sub(r"[^\w.-]+", "-", os.path.splitext(os.path.basename(a.videos[0]))[0]).strip("-") or "cut"
+    base = os.path.join(out, stem)
+    need_key = not a.transcript or a.llm == "gateway"
+    key = assemblyai.api_key(required=False) if a.llm != "agent" or not a.transcript else None
+    if need_key and not key:
+        raise SystemExit("needs ASSEMBLYAI_API_KEY" + (" to transcribe (or pass --transcript)" if not a.transcript else ""))
+    transcripts = []
+    for i, v in enumerate(a.videos):
+        if a.transcript:
+            transcripts.append(read_json(a.transcript[i]))
+            continue
+        name = re.sub(r"[^\w.-]+", "-", os.path.splitext(os.path.basename(v))[0])
+        cache = os.path.join(out, f"{name}.{mode.transcript_key}.transcript.json")
+        if os.path.exists(cache):
+            transcripts.append(read_json(cache))
+        else:
+            t = assemblyai.transcribe(v, key, mode, keyterms=a.keyterm)
+            with open(cache, "w", encoding="utf-8") as f:
+                json.dump(t, f, ensure_ascii=False)
+            transcripts.append(t)
+    llm = None if a.llm == "none" else modes.Llm(key, a.llm_model, base + ".cut", prefer_agent=a.llm == "agent")
+    editors = list(exports.EDITORS) if a.editor and "all" in a.editor else (a.editor or [])
+    try:
+        roughcut.run(a.videos, transcripts, base, llm, editors, a.render)
+    except modes.NeedsAgent as need:
+        print(f"Waiting for the agent: answer {need.request} in {need.answers}, then run this command again.")
+        sys.exit(AGENT_EXIT)
+    print(f"Caption the cut next: python3 -m captions {base}.cut.mp4 --transcript {base}.cut.transcript.json --mode ..."
+          if a.render else f"Transcript on the cut's clock -> {base}.cut.transcript.json")
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     sub = argv[:1]
+    if sub == ["cut"]:
+        return cut(argv[1:])
     if sub == ["demo"]:
         return demo(*argv[1:2])
     if sub == ["modes"]:
