@@ -1,6 +1,7 @@
 """Render docs/gallery/<mode>.png from examples/*.json: one caption line per mode, mid-line so the word-by-word
 reveal shows. Then docs/gallery/styles/<style>.png and <style>-vertical.png: each --style on a 16:9 and a 9:16 frame,
-from examples/transcripts/interview.json with speaker names on. Needs ffmpeg built with libass.
+from examples/transcripts/interview.json with speaker names on. Then docs/hero.gif: one line per mode, animated word by
+word, for the top of the README. Needs ffmpeg built with libass.
 
     python3 scripts/make_gallery.py
 """
@@ -85,6 +86,51 @@ def styles():
         print(render_style(style, (1080, 1920), profiles.VERTICAL, 12.0, os.path.join(out, f"{style}-vertical.png")))
 
 
+HERO_MODES = ["spanish+english", "japanese+english", "hinglish-roman", "mandarin+english", "korean+english"]
+HERO_W, HERO_FPS = 960, 15
+
+
+def hero_clip(path, out):
+    """One mode's fullest line, played word by word from just before it starts to just after it ends."""
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+    mode = languages.parse(data["mode"])
+    c = pick(data["cues"])
+    font = fonts.for_libass(fonts.resolve(None, mode.script)).family
+    font2 = fonts.for_libass(fonts.resolve(None, mode.script2 or mode.script)).family
+    with tempfile.TemporaryDirectory() as d:
+        ass = os.path.join(d, "g.ass")
+        writers.ass([{**c, "end": c["end"] + 0.6}], ass, (W, H), not mode.rtl, font, font2)
+        with open(ass, encoding="utf-8") as f:
+            text = f.read().replace("\n[Events]", "\nStyle: Label,Helvetica Neue,26,&H00A0A0A0,&H00A0A0A0,&H00000000,"
+                                    "&H00000000,1,0,0,0,100,100,2,0,1,0,0,7,0,0,0,1\n\n[Events]")
+        text += f"Dialogue: 1,0:00:00.00,0:10:00.00,Label,,0,0,0,,{{\\pos(64,{TOP + 22})}}{mode.label.upper()}   ·   /{mode.name}\n"
+        with open(ass, "w", encoding="utf-8") as f:
+            f.write(text)
+        a, b = max(c["start"] - 0.25, 0), c["end"] + 0.6
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", f"color=c=0x202022:s={W}x{H}:r={HERO_FPS}:d={b + 0.1:.2f}",
+                        "-vf", f"{writers.ass_filter(ass)},crop={W}:{CROP}:0:{TOP},scale={HERO_W}:-2,trim=start={a:.2f}:end={b:.2f},"
+                        "setpts=PTS-STARTPTS", "-c:v", "libx264", "-crf", "12", "-pix_fmt", "yuv444p", out], cwd=d, check=True)
+    return out
+
+
+def hero():
+    """docs/hero.gif: a few modes in a row, each line animated as it's spoken."""
+    with tempfile.TemporaryDirectory() as d:
+        clips = [hero_clip(os.path.join(ROOT, "examples", f"{m}.json"), os.path.join(d, f"{i}.mp4"))
+                 for i, m in enumerate(HERO_MODES)]
+        with open(os.path.join(d, "list.txt"), "w", encoding="utf-8") as f:
+            f.writelines(f"file '{c}'\n" for c in clips)
+        joined = os.path.join(d, "all.mp4")
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", os.path.join(d, "list.txt"),
+                        "-c", "copy", joined], check=True)
+        gif = os.path.join(ROOT, "docs", "hero.gif")
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", joined, "-vf",
+                        "split[a][b];[a]palettegen=max_colors=64:stats_mode=diff[p];[b][p]paletteuse=dither=none:diff_mode=rectangle",
+                        "-loop", "0", gif], check=True)
+    return gif
+
+
 def main():
     if not writers.has_libass():
         raise SystemExit("needs ffmpeg built with libass")
@@ -92,6 +138,7 @@ def main():
     for p in sorted(glob.glob(os.path.join(ROOT, "examples", "*.json"))):
         print(render(p))
     styles()
+    print(hero())
 
 
 if __name__ == "__main__":
