@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600" role="img" aria-labelledby="t d">
+  <title id="t">How it works</title>
+  <desc id="d">A Claude Code command asks for a font and an editor. The video's speech is transcribed by AssemblyAI Speech-to-Text through an API key or the AssemblyAI MCP server, broken into caption lines, given a translated or romanized second line by LLM Gateway or the agent, and written as caption files, a styled overlay, Final Cut Pro, DaVinci Resolve and Premiere Pro projects, and a browser preview.</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+      <path d="M0 0L10 5L0 10z" fill="#8b8b95"/>
+    </marker>
+    <style>
+      text { font-family: -apple-system, "Segoe UI", system-ui, sans-serif; fill: #e9e9ee; }
+      .h { font-size: 19px; font-weight: 600; }
+      .s { font-size: 14px; fill: #a6a6b0; }
+      .m { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 15px; fill: #e9e9ee; }
+      .k { font-size: 12px; letter-spacing: .12em; fill: #8b8b95; font-weight: 600; }
+      .box { fill: #26262b; stroke: #3a3a42; stroke-width: 1.5; }
+      .hot { fill: #1f2a44; stroke: #4c6fd1; stroke-width: 1.5; }
+      .chip { fill: #26262b; stroke: #3a3a42; }
+      .ln { stroke: #8b8b95; stroke-width: 2; fill: none; marker-end: url(#a); }
+    </style>
+  </defs>
+  <rect width="1200" height="600" rx="18" fill="#18181b"/>
+
+  <!-- Claude Code -->
+  <text x="40" y="52" class="k">IN CLAUDE CODE</text>
+  <rect x="40" y="68" width="330" height="48" rx="10" class="box"/>
+  <text x="58" y="98" class="m">/japanese+english talk.mov</text>
+  <path d="M378 92H420" class="ln"/>
+  <rect x="428" y="68" width="210" height="48" rx="10" class="box"/>
+  <text x="446" y="98" class="h" style="font-size:16px">Asks: which font?</text>
+  <path d="M646 92H688" class="ln"/>
+  <rect x="696" y="68" width="220" height="48" rx="10" class="box"/>
+  <text x="714" y="98" class="h" style="font-size:16px">Asks: which editor?</text>
+  <path d="M924 92H966" class="ln"/>
+  <rect x="974" y="68" width="186" height="48" rx="10" class="box"/>
+  <text x="992" y="98" class="h" style="font-size:16px">Runs the steps ↓</text>
+
+  <!-- pipeline -->
+  <text x="40" y="172" class="k">WHAT HAPPENS</text>
+
+  <rect x="40" y="188" width="170" height="150" rx="12" class="box"/>
+  <text x="58" y="222" class="h">Your video</text>
+  <text x="58" y="250" class="s">.mov, .mp4, any</text>
+  <text x="58" y="270" class="s">length; or a URL</text>
+
+  <path d="M218 263H252" class="ln"/>
+  <rect x="260" y="188" width="230" height="150" rx="12" class="hot"/>
+  <text x="278" y="222" class="h">Speech-to-Text</text>
+  <text x="278" y="250" class="s">AssemblyAI Universal-3.5 Pro</text>
+  <text x="278" y="270" class="s">code-switching, word timings</text>
+  <text x="278" y="300" class="s">via your API key or the</text>
+  <text x="278" y="320" class="s">AssemblyAI MCP server</text>
+
+  <path d="M498 263H532" class="ln"/>
+  <rect x="540" y="188" width="220" height="150" rx="12" class="box"/>
+  <text x="558" y="222" class="h">Caption lines</text>
+  <text x="558" y="250" class="s">breaks for each script</text>
+  <text x="558" y="270" class="s">reading speed, 16:9 or 9:16</text>
+  <text x="558" y="290" class="s">styles, speaker names</text>
+  <text x="558" y="320" class="s">word-by-word timing</text>
+
+  <path d="M768 263H802" class="ln"/>
+  <rect x="810" y="188" width="200" height="150" rx="12" class="hot"/>
+  <text x="828" y="222" class="h">Second line</text>
+  <text x="828" y="250" class="s">translate or romanize</text>
+  <text x="828" y="270" class="s">with LLM Gateway, or</text>
+  <text x="828" y="290" class="s">your agent (no key)</text>
+  <text x="828" y="320" class="s">optional</text>
+
+  <!-- outputs -->
+  <text x="40" y="392" class="k">WHAT YOU GET</text>
+  <path d="M910 346V372H600V384" class="ln"/>
+
+  <rect x="40" y="408" width="250" height="64" rx="10" class="chip"/>
+  <text x="58" y="436" class="h" style="font-size:16px">Caption files</text>
+  <text x="58" y="458" class="s">SRT and VTT for any player</text>
+
+  <rect x="306" y="408" width="270" height="64" rx="10" class="chip"/>
+  <text x="324" y="436" class="h" style="font-size:16px">Styled overlay, burn-in</text>
+  <text x="324" y="458" class="s">ProRes 4444 with alpha; MP4</text>
+
+  <rect x="592" y="408" width="270" height="64" rx="10" class="chip"/>
+  <text x="610" y="436" class="h" style="font-size:16px">Final Cut Pro</text>
+  <text x="610" y="458" class="s">FCPXML with real captions</text>
+
+  <rect x="878" y="408" width="282" height="64" rx="10" class="chip"/>
+  <text x="896" y="436" class="h" style="font-size:16px">DaVinci Resolve</text>
+  <text x="896" y="458" class="s">FCPXML timeline + SRT subtitles</text>
+
+  <rect x="40" y="488" width="250" height="64" rx="10" class="chip"/>
+  <text x="58" y="516" class="h" style="font-size:16px">Premiere Pro</text>
+  <text x="58" y="538" class="s">sequence XML + SRT captions</text>
+
+  <rect x="306" y="488" width="270" height="64" rx="10" class="chip"/>
+  <text x="324" y="516" class="h" style="font-size:16px">Browser preview</text>
+  <text x="324" y="538" class="s">every mode, word by word</text>
+
+  <rect x="592" y="488" width="568" height="64" rx="10" fill="none" stroke="#3a3a42" stroke-dasharray="5 5"/>
+  <text x="610" y="516" class="h" style="font-size:16px">Your font, in every output</text>
+  <text x="610" y="538" class="s">a system font, or a file you put in fonts/ (none ship with the repo)</text>
+</svg>

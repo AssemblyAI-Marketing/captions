@@ -5,6 +5,12 @@ open it in **Final Cut Pro, DaVinci Resolve or Premiere Pro**. Powered by [Assem
 Speech-to-Text (`universal-3-5-pro`, with code-switching for speech that mixes languages). Each word shows up grey as
 it's spoken and turns white when it ends.
 
+<img src="docs/hero.gif" alt="Captions appearing word by word in Spanish, Japanese, Hinglish, Mandarin and Korean, each with an English line underneath" width="960">
+
+<img src="docs/how-it-works.svg" alt="How it works: a Claude Code command asks for a font and an editor; AssemblyAI Speech-to-Text transcribes the video, the captions are broken into lines, LLM Gateway or the agent adds a translated second line, and you get caption files, a styled overlay, Final Cut Pro, DaVinci Resolve and Premiere Pro projects, and a browser preview" width="960">
+
+## Every language
+
 Every style, frozen mid-line so you can see words landing. Spanish, French, German, Portuguese, Italian, Japanese,
 Korean and Mandarin are real AssemblyAI output (transcription and translation) on speech written for this repo;
 English, Arabic, Hindi and Hinglish are written samples:
@@ -25,6 +31,8 @@ Try it without a key: open [`demo.html`](demo.html) in a browser.
 
 Captions of your own mic, live, with AssemblyAI realtime Speech-to-Text: a transparent overlay for OBS or Streamlabs, an
 always-on-top window to share in Zoom, Meet or Teams, or full screen on a stage display.
+
+<img src="docs/live.png" alt="The live captions page: two lines of captions on black, the last words still dim, with settings for language, model, font, size, position, lines, style and background" width="720">
 
 ```bash
 python3 live/server.py
@@ -99,6 +107,10 @@ Next to the video, for each mode:
 | `--glue`, `--max-width` | Keep a phrase on one line; line length in columns (Chinese, Japanese and Korean count double; default from the video's shape) |
 
 The transcript is cached as `talk.<language>.transcript.json`, so adding modes later doesn't transcribe again.
+
+`talk.preview.html` plays your video with every mode's captions, word by word, with a switch for each mode:
+
+<img src="docs/preview.png" alt="The browser preview: Japanese captions with an English line underneath over the video, buttons for each caption mode, and a play bar" width="720">
 
 ## Vertical and horizontal video
 
@@ -199,6 +211,9 @@ captions/
 .claude/         the captions skill and one command per popular mode
 examples/        sample captions; transcripts/ holds sample transcript JSON
 live/            live captions of your mic: page, token server, tests (live/README.md)
+scripts/         make_commands.py (the slash commands), make_gallery.py (gallery, styles, hero GIF; needs
+                 ffmpeg with libass), make_screenshots.py (preview and live page; needs Playwright)
+docs/            README images; how-it-works.svg is hand-written
 ```
 
 ## Privacy and security
